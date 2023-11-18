@@ -9,6 +9,20 @@ import os
 logger = setup_logger()
 
 def process_data_in_chunks(url, params, region, area_code, start, end, chunk_size, xml_to_dataframe, output_path, data_type):
+    """
+    Process data in chunks and save it to a CSV file.
+
+    :param url: URL of the API.
+    :param params: Parameters for the API.
+    :param region: Region to fetch data from.
+    :param area_code: Area code of the region.
+    :param start: Start time of the data to fetch.
+    :param end: End time of the data to fetch.
+    :param chunk_size: Size of the chunks to fetch.
+    :param xml_to_dataframe: Function to convert XML to DataFrame.
+    :param output_path: Path to save the CSV files.
+    :param data_type: Type of data to fetch (e.g., 'load', 'gen').
+    """
     current_start = datetime.datetime.strptime(start, '%Y%m%d%H%M')
     end = datetime.datetime.strptime(end, '%Y%m%d%H%M')
 

@@ -23,3 +23,19 @@ GREEN_ENERGY = [
     "B19"   # Wind Onshore
 ]
 
+TYPE = [
+    "load",
+    "gen"
+]
+
+REGION = {
+"SP": 0, # Spain
+"UK": 1, # United Kingdom
+"DE": 2, # Germany
+"DK": 3, # Denmark
+"HU": 5, # Hungary
+"SE": 4, # Sweden
+"IT": 6, # Italy
+"PO": 7, # Poland
+"NL": 8 # Netherlands
+}

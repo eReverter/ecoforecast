@@ -6,8 +6,12 @@ from src.definitions import (
     RAW_DATA_DIR, 
     INTERIM_DATA_DIR,
     PROCESSED_DATA_DIR,
-    GREEN_ENERGY)
+    GREEN_ENERGY,
+    TYPE,
+    REGION)
 from src.config import setup_logger
+
+logger = setup_logger()
 
 ### RAW DATA PROCESSING -> INTERIM DATA ###
 
@@ -140,11 +144,30 @@ def aggregate_to_hourly(df, timestamp_col, groupby_cols, aggregate_cols):
 
     return aggregated_df
 
+def process_raw_data(args):
+    """
+    """
+    for region in REGION:
+        for type in TYPE:
+            # Load raw data
+            df = load_raw_data(type, region)
 
-def process_raw_data():
-    """
-    
-    """
+            # Filter out non-green energy sources
+            df = filter_green_energy(df)
+
+            # Fill gaps in time series
+            if args.fill_time_series_gaps:
+                df = fill_time_series_gaps(df, 'timestamp', ['AreaName', 'PsrType'], 'ActualGenerationOutput')
+
+            # Impute missing values
+            if args.impute_missing_values:
+                df = impute_missing_values(df, 'timestamp', ['AreaName', 'PsrType'])
+
+            # Aggregate to hourly values
+            df = aggregate_to_hourly(df, 'timestamp', ['AreaName', 'PsrType'], ['ActualGenerationOutput'])
+
+            # Save the DataFrame
+            df.to_csv(f'{INTERIM_DATA_DIR}/{region}_{type}.csv', index=False)
     return
 
 ### INTERIM DATA PROCESSING -> PROCESSED DATA ###
@@ -176,11 +199,26 @@ def _pivot_df(df, index_col, columns_col, values_col):
     """
     return df.pivot(index=index_col, columns=columns_col, values=values_col)
 
-def merge_interim_data():
+def add_labels(df):
     """
-    Load and merge datasets from the interim data folder.
+    Add target labels to the DataFrame. That is, the country index of the next hour maximum surplus.
 
-    :return: DataFrame with the merged data.
+    :param df: DataFrame with the interim data.
+    :return: DataFrame with labels added.
+    """
+    for region in REGION:
+        load_col = f"Load_{region}"
+        gen_col = f"green_energy_{region}"
+        df[f'{region}_surplus'] = df[gen_col] - df[load_col]
+
+    # Get the country index of the next hour maximum surplus
+    surplus_cols = [col for col in df.columns if col.endswith('_surplus')]
+    
+    # TODO: Finish this function
+
+def process_interim_data(args):
+    """
+    Load, merge, and save datasets from the interim data folder.
     """
     # Get all files in the data path
     files = os.listdir(INTERIM_DATA_DIR)
@@ -202,14 +240,10 @@ def merge_interim_data():
         df_file.columns = [f'{region}_{type}_{col}' for col in df_file.columns]
 
         # Horizontally merge the DataFrames
-        df = pd.concat([df, df_file], axis=1)    
-
-    return df
-
-def process_interim_data():
-    """
+        df = pd.concat([df, df_file], axis=1)
     
-    """
+    # Save the DataFrame
+    df.to_csv(f'{PROCESSED_DATA_DIR}/processed_data.csv', index=False)
     return
 
 ### PIPELINE ###
