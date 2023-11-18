@@ -1,8 +1,8 @@
 import argparse
 import datetime
 import pandas as pd
-from utils import perform_get_request, xml_to_load_dataframe, xml_to_gen_data
-from config import setup_logger
+from src.utils import perform_get_request, xml_to_load_dataframe, xml_to_gen_data
+from src.config import setup_logger
 from tqdm import tqdm
 import os
 
