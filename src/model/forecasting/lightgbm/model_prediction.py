@@ -1,50 +1,44 @@
-import pandas as pd
 import argparse
-
-def load_data(file_path):
-    # TODO: Load test data from CSV file
-    return df
+import lightgbm as lgb
+import pandas as pd
+import os
+from src.data.prepare_data import load_data  # Adjust imports as needed
+from src.model.forecasting.lightgbm.model_training import prepare_data  # Adjust import path
+from src.definitions import PREDICTIONS_DIR
 
 def load_model(model_path):
-    # TODO: Load the trained model
+    model = lgb.Booster(model_file=model_path)  # Load LightGBM model
     return model
 
-def make_predictions(df, model):
-    # TODO: Use the model to make predictions on the test data
-    return predictions
+def main():
+    parser = argparse.ArgumentParser(description='Make predictions using LightGBM')
+    parser.add_argument('--model', type=str, help='Path to model')
+    parser.add_argument('--data', type=str, help='Path to prediction data')
+    args = parser.parse_args()
 
-def save_predictions(predictions, predictions_file):
-    # TODO: Save predictions to a JSON file
-    pass
+    model_path = args.model
+    model = load_model(model_path)
 
-def parse_arguments():
-    parser = argparse.ArgumentParser(description='Prediction script for Energy Forecasting Hackathon')
-    parser.add_argument(
-        '--input_file', 
-        type=str, 
-        default='data/test_data.csv', 
-        help='Path to the test data file to make predictions'
-    )
-    parser.add_argument(
-        '--model_file', 
-        type=str, 
-        default='models/model.pkl',
-        help='Path to the trained model file'
-    )
-    parser.add_argument(
-        '--output_file', 
-        type=str, 
-        default='predictions/predictions.json', 
-        help='Path to save the predictions'
-    )
-    return parser.parse_args()
+    # Load and prepare prediction data
+    _, validation = load_data()
+    validation = prepare_data(validation, lags=[1,2,3])
+    x_predict = validation.drop(['timestamp', 'series_id'], axis=1)  # Drop non-feature columns
 
-def main(input_file, model_file, output_file):
-    df = load_data(input_file)
-    model = load_model(model_file)
-    predictions = make_predictions(df, model)
-    save_predictions(predictions, output_file)
+    # Make predictions
+    predictions = model.predict(x_predict)
+
+    # Convert predictions back to original format
+    validation['predicted_surplus'] = predictions
+    pivoted_df = validation.pivot(index='timestamp', columns='series_id', values='predicted_surplus')
+
+    # Get the maximum country code for each row (timestamp)
+    max_col = pivoted_df.idxmax(axis=1)
+    pivoted_df['target'] = max_col
+
+    predictions_path = os.path.join(PREDICTIONS_DIR, 'lightgbm_reg_predictions.json')
+    pivoted_df.reset_index()[['timestamp', 'target']].to_json(predictions_path, orient='records')
+
+    print(f"Predictions saved to {predictions_path}")
 
 if __name__ == "__main__":
-    args = parse_arguments()
-    main(args.input_file, args.model_file, args.output_file)
+    main()
