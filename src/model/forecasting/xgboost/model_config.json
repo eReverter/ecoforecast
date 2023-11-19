@@ -1,0 +1,11 @@
+{
+    "n_estimators": 1000,
+    "eta": 0.03,
+    "max_depth": 12,
+    "subsample": 0.75,
+    "colsample_bytree": 0.75,
+    "objective": "reg:squarederror",
+    "min_child_weight": 32,
+    "eval_metric": "mae",
+    "seed": 123
+}

@@ -30,6 +30,7 @@ def main():
     # Load and prepare prediction data
     _, validation = load_data()
     validation = prepare_data(validation)
+    validation.drop(['curr_max'], axis=1, inplace=True)
     x_predict = validation.drop(['timestamp'], axis=1)
 
     # Make predictions

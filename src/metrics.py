@@ -152,9 +152,15 @@ def main():
     actual = pd.read_json(os.path.join(PREDICTIONS_DIR, 'predictions.json'))
     predictions = pd.read_json(args.predictions)
 
-    # Do not account for the last value and convert to lists of targets
-    actual = actual.iloc[:-1].target.tolist()
-    predictions = predictions.iloc[:-1].target.tolist()
+    # Ensure the values are paired by timestamp if possible
+    if 'timestamp' in actual and 'timestamp' in predictions: # forecasting
+        merged = actual.merge(predictions, how='inner', on='timestamp')
+        merged.dropna(inplace=True)
+        actual = merged.target_x.tolist()
+        predictions = merged.target_y.tolist()
+    else: # cls
+        actual = actual.iloc[:-1].target.tolist()
+        predictions = predictions.iloc[:-1].target.tolist()
 
     # Compute the f1 score
     f1, precision, recall = f1_score(predictions, actual)

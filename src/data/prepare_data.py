@@ -43,16 +43,29 @@ def get_surplus(df):
         df[f'{region}_surplus'] = df[f'{region}_gen'] - df[f'{region}_load']
     return df
 
-def get_target(df):
+def get_curr_max(df):
     """
-    Get the label for the dataframe using the column with the maximum surplus
+    Get the current maximum surplus region
     """
     max_col = df.filter(regex='surplus').idxmax(axis=1)
     country_code = max_col.str.split('_', expand=True)[0]
-    df['target'] = country_code
-    
+    df['curr_max'] = country_code
+
+    return df
+
+def get_cls_target(df):
+    """
+    Get the label for the dataframe using the column with the maximum surplus
+    """
     # Use the next observation country code as the target
-    df['target'] = df['target'].shift(-1)
+    df['target'] = df['curr_max'].shift(-1)
+    return df
+
+def get_ohe_from_cat(df, cat='curr_max'):
+    """
+    Get one-hot encoding from a categorical column
+    """
+    df = pd.concat([df, pd.get_dummies(df[cat], prefix=cat)], axis=1)
     return df
 
 def split_load_gen():
@@ -90,7 +103,7 @@ def convert_to_timeseries(df, value_columns=[], metadata_columns=[]):
 
     return df_melted
 
-def get_lags(ts, lags, value_col='consumption', series_id_col='series_id'):
+def get_lags(ts, lags, value_col='surplus', series_id_col='series_id'):
     """
     Adds lagged values to the time series data.
 
@@ -103,6 +116,10 @@ def get_lags(ts, lags, value_col='consumption', series_id_col='series_id'):
     ts.sort_values(by=[series_id_col, 'timestamp'], inplace=True)
     for lag in lags:
         ts[f'{value_col}_lag_{lag}'] = ts.groupby(series_id_col)[value_col].shift(lag)
+    return ts
+
+def get_forecast_target(ts, prediction_horizon, value_col='surplus', series_id_col='series_id'):
+    ts['target'] = ts.groupby(series_id_col)[value_col].shift(-prediction_horizon)
     return ts
 
 def add_is_holiday(ts):
@@ -159,7 +176,8 @@ def prepare_reference_predictions(validation_file):
     validation = get_surplus(validation)
 
     # Add target column
-    validation = get_target(validation)
+    validation = get_curr_max(validation)
+    validation = get_cls_target(validation)
 
     # Build predictions.json with the target column
     predictions = validation[['timestamp', 'target']]

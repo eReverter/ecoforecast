@@ -16,7 +16,9 @@ from src.data.prepare_data import (
     load_data,
     add_is_weekend,
     get_surplus,
-    get_target,
+    get_curr_max,
+    get_ohe_from_cat,
+    get_cls_target,
 )
 from src.definitions import PROCESSED_DATA_DIR, MODELS_DIR
 from src.config import setup_logger
@@ -27,6 +29,8 @@ def prepare_data(df):
     # Add weekend feature and compute surplus
     df = add_is_weekend(df)
     df = get_surplus(df)
+    df = get_curr_max(df)
+    df = get_ohe_from_cat(df, cat='curr_max')
     
     # Remove all cols that have 'load' and 'gen' in its names
     df = df.drop(df.filter(regex='load|gen').columns, axis=1)
@@ -58,7 +62,8 @@ def main():
     # Data Preparation
     logger.info("Preparing data...")
     train = prepare_data(train)
-    train = get_target(train)
+    train = get_cls_target(train)
+    train = train.drop(['curr_max'], axis=1)
 
     # Encode target labels
     label_encoder = LabelEncoder()
