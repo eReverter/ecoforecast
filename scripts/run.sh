@@ -15,11 +15,12 @@ export PYTHONPATH=$(pwd):$PYTHONPATH
 # python src/model/baseline.py \
 #     --data data/processed/validation.csv \
 
-# python src/model/forecasting/xgboost/model_training.py
+# python src/model/forecasting/lightgbm/model_training.py \
+#     --use-grid \
 
-python src/model/forecasting/xgboost/model_prediction.py \
-    --model models/forecasting/xgboost/model.json \
+python src/model/forecasting/lightgbm/model_prediction.py \
+    --model models/forecasting/lightgbm/model.txt \
     --data data/processed/validation.csv
 
 python src/metrics.py \
-    --predictions predictions/xgboost_reg_predictions.json
+    --predictions predictions/lightgbm_reg_predictions.json

@@ -51,3 +51,6 @@ REGION_MAPPING = {
     "PO": "PL",
     "NE": "NL",
 }
+
+SEED = 3
+VAL_SIZE = 0.1
