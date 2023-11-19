@@ -8,6 +8,7 @@ EXTERNAL_DATA_DIR = os.path.join(DATA_DIR, 'external')
 PROCESSED_DATA_DIR = os.path.join(DATA_DIR, 'processed')
 MODELS_DIR = os.path.join(ROOT_DIR, 'models')
 REPORTS_DIR = os.path.join(ROOT_DIR, 'reports')
+PREDICTIONS_DIR = os.path.join(ROOT_DIR, 'predictions')
 
 GREEN_ENERGY = [
     "B01",  # Biomass

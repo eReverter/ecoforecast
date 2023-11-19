@@ -17,11 +17,13 @@ In the forecasting model, all data from 2022 wil be used.
 Processed data will always look like:
 timestamp | etype_1_region_1 | ... | etype_2_region_m 
 """
+import argparse
 from src.definitions import (
     PROCESSED_DATA_DIR, 
     EXTERNAL_DATA_DIR,
     REGION,
-    REGION_MAPPING)
+    REGION_MAPPING,
+    PREDICTIONS_DIR)
 import pandas as pd
 import os
 
@@ -29,7 +31,7 @@ import os
 
 def load_data():
     train = pd.read_csv(os.path.join(PROCESSED_DATA_DIR, 'train.csv'), parse_dates=['timestamp'])
-    test = pd.read_csv(os.path.join(PROCESSED_DATA_DIR, 'test.csv'), parse_dates=['timestamp'])
+    test = pd.read_csv(os.path.join(PROCESSED_DATA_DIR, 'validation.csv'), parse_dates=['timestamp'])
     return train, test
 
 def add_is_weekend(df):
@@ -41,16 +43,16 @@ def get_surplus(df):
         df[f'{region}_surplus'] = df[f'{region}_gen'] - df[f'{region}_load']
     return df
 
-def get_label(df):
+def get_target(df):
     """
     Get the label for the dataframe using the column with the maximum surplus
     """
     max_col = df.filter(regex='surplus').idxmax(axis=1)
     country_code = max_col.str.split('_', expand=True)[0]
-    df['country_code'] = country_code
+    df['target'] = country_code
     
     # Use the next observation country code as the target
-    df['target'] = df['country_code'].shift(-1)
+    df['target'] = df['target'].shift(-1)
     return df
 
 def split_load_gen():
@@ -144,3 +146,31 @@ def normalize_values(ts, value_col='value', series_id_col='series_id'):
     return ts
 
 ### CLASSIFICATION FUNCTIONS ###
+
+### MAIN ###
+def prepare_reference_predictions(validation_file):
+    """
+    Prepare the reference predictions for the validation set.
+    """
+    # Load validation set
+    validation = pd.read_csv(validation_file, parse_dates=['timestamp'])
+
+    # Add surplus column
+    validation = get_surplus(validation)
+
+    # Add target column
+    validation = get_target(validation)
+
+    # Build predictions.json with the target column
+    predictions = validation[['timestamp', 'target']]
+    predictions.to_json(os.path.join(PREDICTIONS_DIR, 'predictions.json'), orient='records')
+
+def main():
+    parser = argparse.ArgumentParser(description='Prepare predictions fo reference')
+    parser.add_argument('--validation', type=str, help='Path to validation file')
+    args = parser.parse_args()
+
+    prepare_reference_predictions(args.validation)
+
+if __name__ == '__main__':
+    main()

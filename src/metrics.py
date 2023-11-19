@@ -1,10 +1,15 @@
 """
 Metrics for the end-to-end pipeline.
 """
+import os
 import numpy as np
 import json
 from termcolor import colored
 import pandas as pd
+import argparse
+from src.definitions import (
+    PREDICTIONS_DIR,
+)
 
 ### ETL METRICS ###
 
@@ -125,3 +130,40 @@ class StatisticsETL:
 ### TRAINING METRICS ###
 
 ### EVALUATION METRICS ###
+
+def f1_score(predictions, actual):
+    """
+    Compute f1 score between prediction and actual values in a multi-class classification problem.
+    """
+    from sklearn.metrics import f1_score, precision_score, recall_score
+    f1 = f1_score(actual, predictions, average='weighted')
+    precision = precision_score(actual, predictions, average='weighted')
+    recall = recall_score(actual, predictions, average='weighted')
+    return f1, precision, recall
+
+### MAIN ###
+
+def main():
+    parser = argparse.ArgumentParser(description='Compute evaluation metrics')
+    parser.add_argument('--predictions', type=str, help='Path to predictions file')
+    args = parser.parse_args()
+
+    # Load predictions and actual values from the .json files
+    actual = pd.read_json(os.path.join(PREDICTIONS_DIR, 'predictions.json'))
+    predictions = pd.read_json(args.predictions)
+
+    # Do not account for the last value and convert to lists of targets
+    actual = actual.iloc[:-1].target.tolist()
+    predictions = predictions.iloc[:-1].target.tolist()
+
+    # Compute the f1 score
+    f1, precision, recall = f1_score(predictions, actual)
+
+    # termcolor
+    print(colored(f'F1 Score: {f1}', 'blue'))
+    print(colored(f'Precision: {precision}', 'green'))
+    print(colored(f'Recall: {recall}', 'red'))
+
+
+if __name__ == '__main__':
+    main()
