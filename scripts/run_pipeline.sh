@@ -1,4 +1,5 @@
 #!/bin/bash
+export PYTHONPATH="${PYTHONPATH}:$(pwd)"
 
 # You can run this script from the command line using:
 # ./run_pipeline.sh <start_date> <end_date> <raw_data_file> <processed_data_file> <model_file> <test_data_file> <predictions_file>

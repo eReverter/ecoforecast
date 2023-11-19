@@ -18,7 +18,6 @@ GREEN_ENERGY = [
     "B13",  # Marine
     "B15",  # Other renewable
     "B16",  # Solar
-    "B17",  # Waste
     "B18",  # Wind Offshore
     "B19"   # Wind Onshore
 ]
@@ -37,5 +36,5 @@ REGION = {
 "SE": 4, # Sweden
 "IT": 6, # Italy
 "PO": 7, # Poland
-"NL": 8 # Netherlands
+"NE": 8 # Netherlands
 }
