@@ -17,7 +17,11 @@ In the forecasting model, all data from 2022 wil be used.
 Processed data will always look like:
 timestamp | etype_1_region_1 | ... | etype_2_region_m 
 """
-from src.definitions import PROCESSED_DATA_DIR, EXTERNAL_DATA_DIR
+from src.definitions import (
+    PROCESSED_DATA_DIR, 
+    EXTERNAL_DATA_DIR,
+    REGION,
+    REGION_MAPPING)
 import pandas as pd
 import os
 
@@ -28,41 +32,115 @@ def load_data():
     test = pd.read_csv(os.path.join(PROCESSED_DATA_DIR, 'test.csv'), parse_dates=['timestamp'])
     return train, test
 
-def load_holidays():
-    for filename in os.listdir(EXTERNAL_DATA_DIR):
-        if 'holiday' in filename:
-            pass
+def add_is_weekend(df):
+    df['is_weekend'] = df['timestamp'].dt.dayofweek.isin([5, 6])
+    return df
 
-def get_surplus():
-    pass
-
-def get_labels(df):
-    """
-    Add target labels to the DataFrame. That is, the country index of the next hour maximum surplus.
-
-    :param df: DataFrame with the interim data.
-    :return: DataFrame with labels added.
-    """
+def get_surplus(df):
     for region in REGION:
-        load_col = f"Load_{region}"
-        gen_col = f"green_energy_{region}"
-        df[f'{region}_surplus'] = df[gen_col] - df[load_col]
+        df[f'{region}_surplus'] = df[f'{region}_gen'] - df[f'{region}_load']
+    return df
 
-    # Get the country index of the next hour maximum surplus
-    surplus_cols = [col for col in df.columns if col.endswith('_surplus')]
+def get_label(df):
+    """
+    Get the label for the dataframe using the column with the maximum surplus
+    """
+    max_col = df.filter(regex='surplus').idxmax(axis=1)
+    country_code = max_col.str.split('_', expand=True)[0]
+    df['country_code'] = country_code
     
-    # TODO: Finish this function
+    # Use the next observation country code as the target
+    df['target'] = df['country_code'].shift(-1)
+    return df
 
 def split_load_gen():
     pass
 
-
-
 ### FORECASTING ENERGY FUNCTIONS ###
 
-def get_lags():
-    pass
+def convert_to_timeseries(df, value_columns=[], metadata_columns=[]):
+    """
+    Convert the DataFrame to a time series format with the following features:
+
+    - series_id (country code extracted from surplus columns)
+    - timestamp
+    - surplus
+    - Additional metadata (e.g., is_weekend)
+
+    :param df: DataFrame to be converted.
+    :param surplus_columns: List of columns in df that contain surplus data.
+    :param metadata_columns: List of additional metadata columns to retain (excluding 'timestamp').
+    """
+    # Ensure 'timestamp' is always included and not duplicated
+    id_vars = ['timestamp'] + metadata_columns
+
+    if len(value_columns) == 0:
+        value_columns = [col for col in df.columns if 'surplus' in col]
+
+    # Selecting surplus variables and metadata
+    df_selected = df[id_vars + value_columns]
+
+    # Melt the dataframe to convert to time series format
+    df_melted = df_selected.melt(id_vars=id_vars, var_name='series_id', value_name='surplus')
+
+    # Extracting the country code from the series_id
+    df_melted['series_id'] = df_melted['series_id'].str.split('_').str[0]
+
+    return df_melted
+
+def get_lags(ts, lags, value_col='consumption', series_id_col='series_id'):
+    """
+    Adds lagged values to the time series data.
+
+    :param df: DataFrame with time series data.
+    :param lags: List of lag values.
+    :param value_col: Name of the column containing values.
+    :param series_id_col: Name of the column containing series identifiers.
+    :return: DataFrame with lagged values added.
+    """
+    ts.sort_values(by=[series_id_col, 'timestamp'], inplace=True)
+    for lag in lags:
+        ts[f'{value_col}_lag_{lag}'] = ts.groupby(series_id_col)[value_col].shift(lag)
+    return ts
+
+def add_is_holiday(ts):
+    # Convert timestamp to date for comparison
+    ts['date'] = ts['timestamp'].dt.date
+
+    # Initialize the is_holiday column to False
+    ts['is_holiday'] = False
+
+    # Iterate through each file in the directory
+    for filename in os.listdir(EXTERNAL_DATA_DIR):
+        if 'holiday' in filename:
+            # Extract country code from filename
+            country_code = filename.split('_')[0]
+            mapping = {v: k for k, v in REGION_MAPPING.items()}
+            mapped_country_code = mapping[country_code]
+
+            # Load holidays for the country
+            holidays = pd.read_csv(os.path.join(EXTERNAL_DATA_DIR, filename), parse_dates=['Date'])
+            holidays['date'] = holidays['Date'].dt.date
+
+            # Find indices in the time series where the country and date match a holiday
+            holiday_indices = ts[(ts['series_id'] == mapped_country_code) & (ts['date'].isin(holidays['date']))].index
+
+            # Mark these as holidays
+            ts.loc[holiday_indices, 'is_holiday'] = True
+
+    ts.drop('date', axis=1, inplace=True)
+    return ts
+            
+def normalize_values(ts, value_col='value', series_id_col='series_id'):
+    """
+    Normalizes values in time series data using the min-max scaler.
+
+    :param df: DataFrame with time series data.
+    :param value_col: Name of the column containing values.
+    :param series_id_col: Name of the column containing series identifiers.
+    :return: DataFrame with values normalized.
+    """
+    ts[value_col] = ts.groupby(series_id_col)[value_col].apply(lambda x: (x - x.min()) / (x.max() - x.min()))
+    return ts
 
 ### CLASSIFICATION FUNCTIONS ###
-
-

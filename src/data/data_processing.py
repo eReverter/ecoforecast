@@ -226,6 +226,28 @@ def _resample_group(group):
     
     return hourly_sum
 
+def interpolate_zeros(df, column_name):
+    """
+    Interpolate zeros in the DataFrame.
+
+    :param df: DataFrame with the raw data.
+    :param column_name: Name of the column containing the values.
+    :return: DataFrame with zeros interpolated.
+    """
+    # Step 1: Create a mask of original NaN values
+    original_na_mask = df[column_name].isna()
+
+    # Step 2: Replace 0s with NaNs temporarily
+    df[column_name].replace(0, np.nan, inplace=True)
+
+    # Step 3: Perform interpolation on NaNs (which includes the original 0s)
+    df[column_name].interpolate(method='linear', direction='both', inplace=True)
+
+    # Step 4: Restore original NaN values using the mask
+    df.loc[original_na_mask, column_name] = np.nan
+
+    return df
+
 def process_raw_data(args):
     """
     Load, process, and save raw data from the raw data folder to the interim data folder.
@@ -263,12 +285,15 @@ def process_raw_data(args):
             if args.fill_time_series_gaps:
                 df = fill_time_series_gaps(df, 'timestamp', groupby_cols, 'value')
 
-            # Impute missing values or drop
+            # Impute missing values or interpolate zeros and keep NaNs
             na_count = df['value'].isna().sum()
             statistics.update_na_count(name, na_count)
             imp_count = 0
             if args.impute_missing_values:
                 df = impute_missing_values(df, 'timestamp', groupby_cols)
+                imp_count = df['value'].isna().sum()
+            else:
+                df = interpolate_zeros(df, 'value')
                 imp_count = df['value'].isna().sum()
             statistics.update_imputed_count(name, imp_count)
 
@@ -330,13 +355,13 @@ def process_interim_data(args):
 
         # Aggregate to green energy
         if etype == 'gen':
-            df_file = aggregate_to_green_energy(df_file.set_index('timestamp')).reset_index()
+            df_file = aggregate_to_green_energy(df_file.set_index('timestamp'))
         
         # Log
         logger.info(f'Loaded {file}, shape: {df_file.shape}')
 
         # Add prefix to the columns
-        df_file.columns = [f'{region}_{etype}_{col}' if col != 'timestamp' else col for col in df_file.columns]
+        df_file.columns = [f'{region}_{etype}' if col != 'timestamp' else col for col in df_file.columns]
 
         # Merge DataFrames by timestamp column (outer join), firsst iteration has no data to merge
         if df.empty:

@@ -6,6 +6,8 @@ import json
 from termcolor import colored
 import pandas as pd
 
+### ETL METRICS ###
+
 class StatisticsETL:
     def __init__(self, start_date=None, end_date=None):
         """
@@ -119,3 +121,7 @@ class StatisticsETL:
         Represent the StatisticsETL object as a string.
         """
         return f"<StatisticsETL from {self.start_date} to {self.end_date}>"
+
+### TRAINING METRICS ###
+
+### EVALUATION METRICS ###

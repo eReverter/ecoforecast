@@ -1,23 +1,11 @@
-from src.definitions import EXTERNAL_DATA_DIR, REGION
+from src.definitions import EXTERNAL_DATA_DIR, REGION, REGION_MAPPING
 
 import pandas as pd
 import holidays
 
-mapping = {
-    "SP": "ES",
-    "UK": "GB",
-    "DE": "DE",
-    "DK": "DK",
-    "HU": "HU",
-    "SE": "SE",
-    "IT": "IT",
-    "PO": "PL",
-    "NE": "NL",
-}
-
 for country, _ in REGION.items():
     # Generate holidays for 2022 and 2023
-    country = mapping[country]
+    country = REGION_MAPPING[country]
     country_holidays = holidays.CountryHoliday(country, years=[2022, 2023])
 
     # Convert to DataFrame
