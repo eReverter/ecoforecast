@@ -2,7 +2,7 @@
 Metrics for the end-to-end pipeline.
 """
 import os
-import numpy as np
+import datetime
 import json
 from termcolor import colored
 import pandas as pd
@@ -126,6 +126,123 @@ class StatisticsETL:
         Represent the StatisticsETL object as a string.
         """
         return f"<StatisticsETL from {self.start_date} to {self.end_date}>"
+
+class DataProcessingStatistics:
+    def __init__(self):
+        # Using nested dictionaries to track counts for each combination of energy type, and region
+        self.data_counts = {}
+        self.loss_reasons = {}
+        self.estimated_frequency = {}
+
+    def _initialize_key(self, etype, region):
+        key = (etype, region)
+        if key not in self.data_counts:
+            self.data_counts[key] = {
+                'original': 0,
+                'processed': 0,
+                'missing_values': 0,
+                'imputed_values': 0,
+                'zero_values': 0,
+            }
+        return key
+
+    def update_counts(self, etype, region, stage, count):
+        key = self._initialize_key(etype, region)
+        self.data_counts[key][stage] += count
+
+    def log_loss_reason(self, etype, region, reason, count):
+        key = (etype, region)
+        if key not in self.loss_reasons:
+            self.loss_reasons[key] = []
+        self.loss_reasons[key].append((reason, count))
+
+    def update_estimated_frequency(self, etype, region, freq):
+        key = self._initialize_key(etype, region)
+        self.estimated_frequency[key] = freq
+
+    def display_statistics(self):
+        # Displaying the statistics in a structured format
+        print(colored("\n--- Data Processing Statistics ---\n", 'white', attrs=['bold']))
+        for key, stats in self.data_counts.items():
+            etype, region = key
+            header = f"Energy Type: {etype}, Region: {region}"
+            print(colored(header, 'blue', attrs=['bold']))
+
+            freq = self.estimated_frequency[key]
+            freq_info = f" Estimated Frequency: {freq}"
+            print(colored(freq_info, 'cyan'))
+
+            for stage, count in stats.items():
+                stage_info = f"  {stage} Count: {count}"
+                print(colored(stage_info, 'white'))
+
+            if key in self.loss_reasons:
+                print(colored("  Loss Reasons:", 'red', attrs=['bold']))
+                for reason, count in self.loss_reasons[key]:
+                    reason_info = f"\t{reason}: {count}"
+                    print(colored(reason_info, 'light_red'))
+
+            print("")  # Blank line for better separation
+
+    def generate_report(self, file_path):
+        with open(file_path, 'w') as file:
+            file.write(f"Data Processing Report\n")
+            file.write(f"Generated on: {datetime.datetime.now()}\n\n")
+
+            for key, stats in self.data_counts.items():
+                etype, region = key
+                file.write(f"Energy Type: {etype}, Region: {region}\n")
+                file.write(f" Estimated Frequency: {self.estimated_frequency[key]}\n")
+                for stage, count in stats.items():
+                    file.write(f"  {stage} Count: {count}\n")
+                if key in self.loss_reasons:
+                    file.write("  Loss Reasons:\n")
+                    for reason, count in self.loss_reasons[key]:
+                        file.write(f"\t{reason}: {count}\n")
+                file.write("\n")
+            
+            file.write("End of Report\n")
+
+class InterimDataProcessingStatistics:
+    def __init__(self):
+        self.file_stats = {}
+        self.merged_stats = {'rows': 0, 'columns': 0}
+
+    def update_file_stats(self, filename, pre_shape, post_shape):
+        self.file_stats[filename] = {'pre_shape': pre_shape, 'post_shape': post_shape}
+
+    def update_merged_stats(self, df):
+        self.merged_stats['rows'] = len(df)
+        self.merged_stats['columns'] = len(df.columns)
+
+    def display_statistics(self):
+        # Displaying the statistics in a structured format
+        print(colored("\n--- Interim Data Processing Statistics ---\n", 'white', attrs=['bold']))
+        for filename, stats in self.file_stats.items():
+            print(colored(f"File: {filename}", 'blue', attrs=['bold']))
+            print(colored(f"\tPre-processing shape: {stats['pre_shape']}", 'green'))
+            print(colored(f"\tPost-processing shape: {stats['post_shape']}", 'yellow'))
+            print("")
+
+        print(colored("Merged DataFrame Statistics:", 'magenta', attrs=['bold']))
+        print(colored(f"\tTotal rows: {self.merged_stats['rows']}", 'green'))
+        print(colored(f"\tTotal columns: {self.merged_stats['columns']}", 'yellow'))
+
+    def generate_report(self, file_path):
+        with open(file_path, 'w') as file:
+            file.write("Interim Data Processing Report\n")
+            file.write(f"Generated on: {datetime.datetime.now()}\n\n")
+
+            for filename, stats in self.file_stats.items():
+                file.write(f"File: {filename}\n")
+                file.write(f"\tPre-processing shape: {stats['pre_shape']}\n")
+                file.write(f"\tPost-processing shape: {stats['post_shape']}\n")
+                file.write("\n")
+
+            file.write("Merged DataFrame Statistics:\n")
+            file.write(f"\tTotal rows: {self.merged_stats['rows']}\n")
+            file.write(f"\tTotal columns: {self.merged_stats['columns']}\n")
+            file.write("\nEnd of Report\n")
 
 ### TRAINING METRICS ###
 

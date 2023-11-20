@@ -11,12 +11,13 @@ from src.definitions import (
     RAW_DATA_DIR, 
     INTERIM_DATA_DIR,
     PROCESSED_DATA_DIR,
+    REPORTS_DIR,
     GREEN_ENERGY,
     TYPE,
     REGION)
 
 from src.config import setup_logger
-from src.metrics import StatisticsETL
+from src.metrics import StatisticsETL, DataProcessingStatistics, InterimDataProcessingStatistics
 
 logger = setup_logger()
 statistics = StatisticsETL()
@@ -35,10 +36,15 @@ def load_raw_data(etype, region, mode='train'):
     files = os.listdir(f'{RAW_DATA_DIR}/{mode}/')
 
     # Load all files that comply with the etype and region into a single DataFrame
+    c = 0
     df = pd.DataFrame()
     for file in files:
         if file.startswith(f'{etype}_{region}'):
             data = pd.read_csv(f'{RAW_DATA_DIR}/{mode}/{file}')
+            # check if there is any StartTime with a different str in the date than 'T00:00Z'
+            if data['StartTime'].str.contains('00:00Z').sum() != len(data):
+                raise ValueError(f'File {file} has a different date format')
+            c += len(data)
             logger.info(f'Loading {file}, shape: {data.shape}')
             df = pd.concat([df, data], ignore_index=True)
     
@@ -48,6 +54,7 @@ def load_raw_data(etype, region, mode='train'):
     df.drop(columns=['StartTime', 'EndTime', 'AreaID'], inplace=True)
     df.set_index('timestamp', inplace=True)
     df.reset_index(inplace=True)
+    assert len(df) == c, 'Some data is missing'
     return df
 
 def _update_columns(df, etype):
@@ -203,7 +210,12 @@ def resample_hourly_accounting_for_missing_intervals(df, groupby_cols=None):
     return pd.concat(resampled_list).reset_index().dropna()
 
 def _resample_group(group):
-    """ Helper function to resample a given group """
+    """ 
+    Helper function to resample a given group.
+
+    :param group: DataFrame with time series data.
+    :return: DataFrame with hourly values, resampled within the group.
+    """
     # Estimate the frequency (15T or 30T)
     estimated_freq = _estimate_timestamp_freq(group)
 
@@ -254,6 +266,8 @@ def process_raw_data(args):
 
     :param args: Arguments from the command line.
     """
+    statistics = DataProcessingStatistics()  # Instantiate the statistics tracking class
+
     tqdm_bar = tqdm(total=len(REGION) * len(TYPE), desc='Processing raw data')
     for region in REGION:
         for etype in TYPE:
@@ -267,48 +281,73 @@ def process_raw_data(args):
             
             # Load raw data
             df = load_raw_data(etype, region, args.mode)
+            statistics.update_counts(etype, region, 'original', len(df))  # Update original count
 
             # Assert units are the same
             assert len(df['UnitName'].unique()) == 1, 'Multiple units in the DataFrame'
 
             df = _update_columns(df, etype)
-            statistics.update_original_count(name, df)
 
             # Filter out non-green energy sources
             if etype == 'gen':
+                pre_filter_count = len(df)
                 df = filter_green_energy(df)
-            statistics.update_green_energy_count(name, df)
+                post_filter_count = len(df)
+                statistics.update_counts(etype, region, 'processed', post_filter_count)
+                statistics.log_loss_reason(etype, region, 'Filtered non-green energy', pre_filter_count - post_filter_count)
+            
+            # Get estimated frequency
+            statistics.update_estimated_frequency(etype, region, _estimate_timestamp_freq(df, 'timestamp'))
 
             # Fill gaps in time series
-            statistics.update_estimated_frequency(name, _estimate_timestamp_freq(df, 'timestamp'))
-            # statistics.update_estimated_frequency(name, 0)
             if args.fill_time_series_gaps:
+                pre_fill_count = len(df)
                 df = fill_time_series_gaps(df, 'timestamp', groupby_cols, 'value')
+                post_fill_count = len(df)
+                statistics.update_counts(etype, region, 'processed', post_fill_count)
+                if post_fill_count != pre_fill_count:
+                    statistics.log_loss_reason(etype, region, 'Filled time series gaps', post_fill_count - pre_fill_count)
 
-            # Impute missing values or interpolate zeros and keep NaNs
-            na_count = df['value'].isna().sum()
-            statistics.update_na_count(name, na_count)
-            imp_count = 0
+            # Impute missing values
+            na_count_before = df['value'].isna().sum()
             if args.impute_missing_values:
                 df = impute_missing_values(df, 'timestamp', groupby_cols)
-                imp_count = df['value'].isna().sum()
-            else:
+                na_count_after = df['value'].isna().sum()
+                statistics.update_counts(etype, region, 'imputed_values', na_count_before - na_count_after)
+                if na_count_after < na_count_before:
+                    statistics.log_loss_reason(etype, region, 'Imputed missing values', na_count_before - na_count_after)
+            
+            # Interpolate zeros
+            if args.interpolate_zeros:
+                zero_count_before = df[df['value'] == 0]['value'].sum()
                 df = interpolate_zeros(df, 'value')
-                imp_count = df['value'].isna().sum()
-            statistics.update_imputed_count(name, imp_count)
-
+                zero_count_after = df[df['value'] == 0]['value'].sum()
+                statistics.update_counts(etype, region, 'zero_values', int(zero_count_before - zero_count_after))
+                if zero_count_after < zero_count_before:
+                    statistics.log_loss_reason(etype, region, 'Interpolated zero values', int(zero_count_before - zero_count_after))
+                
             # Aggregate to hourly values
+            pre_aggregate_count = len(df)
             if args.account_for_missing_intervals:
                 df = resample_hourly_accounting_for_missing_intervals(df, groupby_cols)
             else:
                 df = aggregate_to_hourly(df, 'timestamp', groupby_cols, ['value'])
-            statistics.update_aggregated_count(name, df)
+            post_aggregate_count = len(df)
+            statistics.update_counts(etype, region, 'processed', post_aggregate_count)
+            if post_aggregate_count != pre_aggregate_count:
+                statistics.log_loss_reason(etype, region, 'Aggregated to hourly', pre_aggregate_count - post_aggregate_count)
 
             # Save the DataFrame
-            df.to_csv(f'{INTERIM_DATA_DIR}/{args.mode}/{region}_{etype}.csv', index=False)
-            
-    statistics.display_statistics()
+            # df.to_csv(f'{INTERIM_DATA_DIR}/{args.mode}/{region}_{etype}.csv', index=False)
+
+    statistics.display_statistics()  # Display current statistics
+
+    # Generate the report at the end of the processing
+    report_path = f'{REPORTS_DIR}/data_processing_report.txt'  # Define your report file path
+    statistics.generate_report(report_path)
+    
     return statistics
+
 
 ### INTERIM DATA PROCESSING -> PROCESSED DATA ###
 
@@ -320,9 +359,8 @@ def aggregate_to_green_energy(df):
     :param filter_out: List of energy_type to filter out.
     :return: DataFrame with aggregated values.
     """
-
     # Group by timestamp and aggregate
-    df_grouped = df.groupby([pd.Grouper(freq='H')])
+    df_grouped = df.groupby([pd.Grouper(freq='1H')])
     df_aggregated = df_grouped.agg({'value': 'sum'}, skipna=True).reset_index()
 
     return df_aggregated
@@ -331,6 +369,8 @@ def process_interim_data(args):
     """
     Load, merge, and save datasets from the interim data folder.
     """
+    statistics = InterimDataProcessingStatistics()  # Instantiate statistics tracking
+
     # Get all files in the data path
     files = os.listdir(f'{INTERIM_DATA_DIR}/{args.mode}')
 
@@ -352,11 +392,15 @@ def process_interim_data(args):
 
         # Load the file
         df_file = pd.read_csv(f'{INTERIM_DATA_DIR}/{args.mode}/{file}', parse_dates=['timestamp'])
+        pre_shape = df_file.shape  # Shape before processing
 
         # Aggregate to green energy
         if etype == 'gen':
             df_file = aggregate_to_green_energy(df_file.set_index('timestamp'))
         
+        post_shape = df_file.shape  # Shape after processing
+        statistics.update_file_stats(file, pre_shape, post_shape)  # Update file stats
+
         # Log
         logger.info(f'Loaded {file}, shape: {df_file.shape}')
 
@@ -369,10 +413,19 @@ def process_interim_data(args):
         else:
             df = pd.merge(df, df_file, how='outer', on='timestamp')
 
+    statistics.update_merged_stats(df)  # Update merged DataFrame stats
+
     # Save the DataFrame
-    logger.info(f'Saving {args.mode} data, shape: {df.shape}')
-    df.to_csv(f'{PROCESSED_DATA_DIR}/{args.mode}.csv', index=False)
+    # logger.info(f'Saving {args.mode} data, shape: {df.shape}')
+    # df.to_csv(f'{PROCESSED_DATA_DIR}/{args.mode}.csv', index=False)
+
+    statistics.display_statistics()  # Display statistics at the end
+
+    # Generate the report at the end of the processing
+    report_path = f'{REPORTS_DIR}/interim_data_processing_report.txt'  # Define your report file path
+    statistics.generate_report(report_path)
     return
+
 
 ### MAIN ###
 
@@ -383,6 +436,7 @@ def parser_add_arguments(parser):
     parser.add_argument('--fill_time_series_gaps', action='store_true', help='Fill time series gaps')
     parser.add_argument('--impute_missing_values', action='store_true', help='Impute missing values')
     parser.add_argument('--account_for_missing_intervals', action='store_true', help='Account for missing intervals')
+    parser.add_argument('--interpolate_zeros', action='store_true', help='Interpolate zeros')
 
 def main():
     """

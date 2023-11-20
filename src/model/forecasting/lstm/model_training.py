@@ -9,11 +9,14 @@ from torch.utils.data import DataLoader, TensorDataset
 import argparse
 import json
 import os
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.metrics import mean_squared_error
-import matplotlib.pyplot as plt
 from tqdm import tqdm
 import warnings
+from itertools import product
+from sklearn.model_selection import train_test_split
+import joblib
+
 warnings.filterwarnings('ignore', category=FutureWarning)
 
 from src.data.prepare_data import (
@@ -22,14 +25,19 @@ from src.data.prepare_data import (
     get_surplus,
     get_forecast_target,
     convert_to_timeseries,
-    get_lags,
     add_is_holiday,
     get_ohe_from_cat,
 )
-from src.definitions import PROCESSED_DATA_DIR, MODELS_DIR
+from src.definitions import MODELS_DIR, VAL_SIZE, SEED
 from src.config import setup_logger
 
 logger = setup_logger()
+
+# Set seeds for reproducibility
+torch.manual_seed(SEED)
+np.random.seed(SEED)
+if torch.cuda.is_available():
+    torch.cuda.manual_seed_all(SEED)
 
 class LSTMModel(nn.Module):
     def __init__(self, input_size, hidden_layer_size=50, output_size=1):
@@ -92,8 +100,20 @@ def train_model(model, train_loader, learning_rate=0.001, epochs=10):
         avg_loss = total_loss / len(train_loader)
         logger.info(f'Epoch {epoch}/{epochs} - Loss: {avg_loss:.4f}')
 
+def evaluate_model(model, val_loader, loss_function):
+    model.eval()
+    total_loss = 0
+    with torch.no_grad():
+        for seq, labels in val_loader:
+            y_pred = model(seq)
+            loss = loss_function(y_pred.squeeze(), labels)
+            total_loss += loss.item()
+    return total_loss / len(val_loader)
+
 def parser_add_arguments(parser):
-    parser.add_argument('--debug', action='store_true', help='Debug mode')
+    parser.add_argument('--use-grid', action='store_true', help='Use grid search for model tuning')
+    parser.add_argument('--scaler', type=str, default='standard', choices=['standard', 'minmax'], help='Scaler to use')
+    parser.add_argument('--cnn', action='store_true', help='Use CNNLSTM model')
     return parser
 
 def main():
@@ -101,44 +121,99 @@ def main():
     parser_add_arguments(parser)
     args = parser.parse_args()
 
-    # Load data
     train, _ = load_data()
-
-    # Data Preparation
-    logger.info("Preparing data...")
     train = prepare_data(train)
 
-    # Prepare data for training in LSTM
-    x_train, y_train = create_sequences(train.drop(['timestamp', 'series_id'], axis=1), lags=3)
+    # Splitting data for validation
+    train_data, val_data = train_test_split(train, test_size=VAL_SIZE, random_state=SEED)
+    x_train, y_train = create_sequences(train_data.drop(['timestamp', 'series_id'], axis=1), lags=3)
+    x_val, y_val = create_sequences(val_data.drop(['timestamp', 'series_id'], axis=1), lags=3)
 
     # Normalizing the data
-    scaler = StandardScaler()
-    x_train_scaled = scaler.fit_transform(x_train.reshape(-1, x_train.shape[2]))
+    if args.scaler == 'standard':
+        x_scaler = StandardScaler()
+        y_scaler = StandardScaler()
+    elif args.scaler == 'minmax':
+        x_scaler = MinMaxScaler()
+        y_scaler = MinMaxScaler()
+    else:
+        raise ValueError("Invalid scaler")
+
+    # Scale training data (features)
+    x_train_scaled = x_scaler.fit_transform(x_train.reshape(-1, x_train.shape[2]))
     x_train_scaled = x_train_scaled.reshape(-1, 3, x_train.shape[2])  # 3 is the number of lags
 
-    y_train_scaled = scaler.fit_transform(y_train.reshape(-1, 1)).flatten()
+    # Scale validation data using the same scaler (features)
+    x_val_scaled = x_scaler.transform(x_val.reshape(-1, x_val.shape[2]))
+    x_val_scaled = x_val_scaled.reshape(-1, 3, x_val.shape[2])
 
+    # If you decide to use the same scaler for y
+    y_train_scaled = y_scaler.fit_transform(y_train.reshape(-1, 1)).flatten()
+    y_val_scaled = y_scaler.transform(y_val.reshape(-1, 1)).flatten()
+
+    # Convert to PyTorch tensors
     x_train_tensor = torch.tensor(x_train_scaled, dtype=torch.float32)
     y_train_tensor = torch.tensor(y_train_scaled, dtype=torch.float32)
+    x_val_tensor = torch.tensor(x_val_scaled, dtype=torch.float32)
+    y_val_tensor = torch.tensor(y_val_scaled, dtype=torch.float32)
 
+    # Create TensorDataset and DataLoader for data
     train_data = TensorDataset(x_train_tensor, y_train_tensor)
     train_loader = DataLoader(train_data, batch_size=64, shuffle=True)
+    val_data = TensorDataset(x_val_tensor, y_val_tensor)
+    val_loader = DataLoader(val_data, batch_size=64, shuffle=False)
 
-    # Model configuration
     CONFIG_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'model_config.json')
-    with open(CONFIG_PATH, 'r') as f:
-        model_config = json.load(f)  # LSTM configuration
+    if args.use_grid:
+        hidden_layer_sizes = [50, 100, 150]
+        learning_rates = [0.001, 0.01]
+        num_epochs = [5, 10]
 
-    model = LSTMModel(input_size=x_train_tensor.shape[2], **model_config)
-    
-    # Training
-    train_model(model, train_loader, learning_rate=0.001, epochs=7)
+        best_val_loss = float('inf')
+        best_model_params = {}
+
+        for hidden_size, lr, epochs in product(hidden_layer_sizes, learning_rates, num_epochs):
+            architecture = LSTMModel if not args.cnn else CNNLSTMModel
+            model = architecture(input_size=x_train_tensor.shape[2], hidden_layer_size=hidden_size)
+            # model = LSTMModel(input_size=x_train_tensor.shape[2], hidden_layer_size=hidden_size)
+            train_model(model, train_loader, learning_rate=lr, epochs=epochs)
+            
+            val_loss = evaluate_model(model, val_loader, nn.MSELoss())
+            logger.info(f"Val Loss: {val_loss} for params {hidden_size}, {lr}, {epochs}")
+
+            if val_loss < best_val_loss:
+                best_val_loss = val_loss
+                best_model_params = {'hidden_layer_size': hidden_size, 'learning_rate': lr, 'epochs': epochs}
+                best_model = model
+                # best_model_state = model.state_dict()
+
+        logger.info(f"Best Model Params: {best_model_params}, Loss: {best_val_loss}")
+
+        # Save the best model parameters to config
+        with open(CONFIG_PATH, 'w') as f:
+            json.dump(best_model_params, f)
+
+        model = best_model
+    else:
+        # Load model configuration
+        with open(CONFIG_PATH, 'r') as f:
+            model_config = json.load(f)
+        model = LSTMModel(input_size=x_train_tensor.shape[2], hidden_layer_size=model_config['hidden_layer_size'])
+        train_model(model, train_loader, learning_rate=model_config['learning_rate'], epochs=model_config['epochs'])
 
     # Save Model
-    model_path = os.path.join(f'{MODELS_DIR}/forecasting/lstm', 'lstm_model.pth')
+    model_path = os.path.join(MODELS_DIR, 'forecasting', 'lstm', 'model.pth')
     os.makedirs(os.path.dirname(model_path), exist_ok=True)
     torch.save(model.state_dict(), model_path)
     logger.info(f"Model trained and saved at {model_path}")
 
+    # Save scalers
+    x_scaler_path = os.path.join(MODELS_DIR, 'forecasting/lstm', 'x_scaler.pkl')
+    y_scaler_path = os.path.join(MODELS_DIR, 'forecasting/lstm', 'y_scaler.pkl')
+    joblib.dump(x_scaler, x_scaler_path)
+    joblib.dump(y_scaler, y_scaler_path)
+    logger.info(f"Scalers saved at {x_scaler_path} and {y_scaler_path}")
+
 if __name__ == "__main__":
     main()
+
