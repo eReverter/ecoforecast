@@ -1,16 +1,20 @@
 """
 Enhanced script to train a regression model using LightGBM.
 """
+# Standard library imports
 import argparse
 import json
 import os
+import warnings
+
+# Third-party imports
+import lightgbm as lgb
 import numpy as np
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split, GridSearchCV
-import lightgbm as lgb
-import warnings
-warnings.filterwarnings('ignore', category=FutureWarning)
 
+# Local application imports
+from src.config import setup_logger
 from src.data.prepare_data import (
     load_data,
     add_is_weekend,
@@ -21,11 +25,19 @@ from src.data.prepare_data import (
     add_is_holiday,
     get_ohe_from_cat,
 )
-from src.definitions import MODELS_DIR, SEED, VAL_SIZE
-from src.config import setup_logger
+from src.definitions import (
+    MODELS_DIR, 
+    SEED, 
+    VAL_SIZE
+)
 
+# Suppress specific warnings for cleaner output
+warnings.filterwarnings('ignore', category=FutureWarning)
+
+# Initialize logger
 logger = setup_logger()
 
+# Functions
 def prepare_data(df, lags):
     df = add_is_weekend(df)
     df = get_surplus(df)
@@ -37,7 +49,6 @@ def prepare_data(df, lags):
     df = df.replace(0, np.nan)  # Replace 0s with NaNs
     df.dropna(inplace=True)  # Drop rows with NaNs created by lagging and shifting
     return df
-
 
 def parser_add_arguments(parser):
     parser.add_argument('--use-grid', action='store_true', help='Use grid search for model tuning')
