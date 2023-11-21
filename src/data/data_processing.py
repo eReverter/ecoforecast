@@ -424,6 +424,7 @@ def process_interim_data(args):
 
     # Save the DataFrame
     logger.info(f'Saving {args.mode} data, shape: {df.shape}')
+    df.sort_values(by='timestamp', inplace=True)
     df.to_csv(f'{PROCESSED_DATA_DIR}/{args.mode}.csv', index=False)
 
     statistics.display_statistics()  # Display statistics at the end

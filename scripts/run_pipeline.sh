@@ -19,34 +19,35 @@ export PYTHONPATH=$(pwd):$PYTHONPATH
 #     --end_year 2023
 
 # echo "Processing training data..."
-# python src/data/data_processing.py \
-#     --process_raw_data \
-#     --interpolate_zeros \
-#     --process_interim_data \
-#     --mode train
+python src/data/data_processing.py \
+    --process_raw_data \
+    --interpolate_zeros \
+    --process_interim_data \
+    --mode train
 
-# echo "Processing validation data..."
-# python src/data/data_processing.py \
-#     --process_raw_data \
-#     --interpolate_zeros \
-#     --process_interim_data \
-#     --mode validation
+echo "Processing validation data..."
+python src/data/data_processing.py \
+    --process_raw_data \
+    --interpolate_zeros \
+    --process_interim_data \
+    --mode validation
 
-# echo "Visualizing training data..."
-# python src/visualization/visualize.py \
-#     --mode train
+echo "Visualizing training data..."
+python src/visualization/visualize.py \
+    --mode train
 
-# echo "Visualizing validation data..."
-# python src/visualization/visualize.py \
-#     --mode validation
+echo "Visualizing validation data..."
+python src/visualization/visualize.py \
+    --mode validation
 
-# echo "Preparing data for evaluation..."
-# python src/data/prepare_data.py \
-#     --validation data/processed/validation.csv
+echo "Preparing data for evaluation..."
+python src/data/prepare_data.py \
+    --validation data/processed/validation.csv
 
 echo "Predicting with XGBoost CLS model..."
 python src/model/classification/xgboost/model_prediction.py \
-    --model models/classification/xgboost/model.json
+    --model models/classification/xgboost/model.json \
+    --encoder models/classification/xgboost/label_encoder.npy
 
 echo "Predicting with XGBoost REG model..."
 python src/model/forecasting/xgboost/model_prediction.py \
