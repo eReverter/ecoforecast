@@ -25,14 +25,14 @@ export PYTHONPATH=$(pwd):$PYTHONPATH
 # python src/model/baseline.py \
 #     --data data/processed/validation.csv \
 
-# python src/model/forecasting/lightgbm/model_training.py
+python src/model/forecasting/lstm/model_training.py
 
-python src/model/forecasting/lstm/model_training.py \
+# python src/model/forecasting/lstm/model_training.py \
     # --use-grid \
     # --scaler 'minmax'
 
 python src/model/forecasting/lstm/model_prediction.py \
-    --model models/forecasting/lstm/model.pth
-
+    --model models/forecasting/lstm/model.pth \
+    
 python src/metrics.py \
     --predictions predictions/lstm_predictions.json

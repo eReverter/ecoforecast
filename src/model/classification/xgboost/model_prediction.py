@@ -18,7 +18,7 @@ from src.model.classification.xgboost.model_training import prepare_data
 
 ### GENERAL FUNCTIONS ###
 
-def load_model(model_path):
+def load_xgb_model(model_path):
     model = xgb.XGBClassifier()
     model.load_model(model_path)
     return model
@@ -32,7 +32,7 @@ def main():
 
     # Load Model
     model_path = args.model
-    model = load_model(model_path)
+    model = load_xgb_model(model_path)
 
     # Load and prepare prediction data
     _, validation = load_data()

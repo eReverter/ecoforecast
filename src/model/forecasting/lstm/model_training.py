@@ -66,11 +66,11 @@ class LSTMModel(nn.Module):
     def forward(self, input_seq):
         lstm_out1, _ = self.lstm1(input_seq)
         dropout_out1 = self.dropout1(lstm_out1)
-        # lstm_out2, _ = self.lstm2(dropout_out1)
-        # dropout_out2 = self.dropout2(lstm_out2)
+        lstm_out2, _ = self.lstm2(dropout_out1)
+        dropout_out2 = self.dropout2(lstm_out2)
 
         # Getting the output from the last LSTM layer for each sequence
-        predictions = self.linear(dropout_out1[:, -1, :])
+        predictions = self.linear(dropout_out2[:, -1, :])
         return predictions
 
 ### GENERAL FUNCTIONS ###

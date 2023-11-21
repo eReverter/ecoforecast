@@ -11,8 +11,40 @@ Approaches include classification (directly predicting the country) and forecast
 The entire year of 2022 serves as training data, while the first four months of 2023 are used for testing. The repository structure is as follows:
 
 ```
-# Include repo tree here
+.
+├── data # from raw data to processed data
+│   ├── external
+│   ├── interim
+│   │   ├── train
+│   │   └── validation
+│   ├── processed
+│   └── raw
+│       ├── train
+│       └── validation
+├── figures
+├── models # model weights
+│   ├── classification
+│   │   └── xgboost
+│   └── forecasting
+│       ├── lightgbm
+│       ├── lstm
+│       └── xgboost
+├── predictions
+├── reports
+├── scripts
+└── src # main code
+    ├── data # code to fetch, transform, and prepare data
+    ├── model # code to train and predict
+    │   ├── classification
+    │   │   └── xgboost
+    │   └── forecasting
+    │       ├── lightgbm
+    │       ├── lstm
+    │       └── xgboost
+    └── visualization # code to obtain visualizations
 ```
+
+Every script, object, and function within the project contain the details on the implementation.
 
 ## Index
 
@@ -24,6 +56,7 @@ The entire year of 2022 serves as training data, while the first four months of 
 - [Model Training](#model-training)
 - [Model Prediction](#model-prediction)
 - [Evaluate Models](#evaluate-models)
+- [Conclusion](#conclusion)
 
 ### Repo Setup
 
@@ -213,14 +246,20 @@ python src/metrics.py --predictions predictions/{prediction_path}.json
 
 Results overview:
 
-| Model               | F1 Score | Precision | Recall |
-|---------------------|----------|-----------|--------|
-| Bas
+| Model               | F1 Score | Precision | Recall   |
+|---------------------|----------|-----------|----------|
+| Naive Baseline      | 0.89     | 0.89      | 0.89     |
+| XGBoost (Class.)    | 0.61     | 0.54      | 0.71     |
+| XGBoost (Forecast.) | 0.92     | 0.92      | 0.92     |
+| LightGBM            | 0.92     | 0.92      | 0.92     |
+| LSTM                | 0.17     | 0.19      | 0.17     |
 
-eline            | ...      | ...       | ...    |
-| XGBoost (Class.)    | ...      | ...       | ...    |
-| XGBoost (Forecast.) | ...      | ...       | ...    |
-| LightGBM            | ...      | ...       | ...    |
-| LSTM                | ...      | ...       | ...    |
+## Conclusion
+
+This project's exploration into renewable energy surplus prediction across European countries reveals significant insights:
+
+- The Naive Baseline model showed unexpectedly high effectiveness, indicating predictable patterns in the energy surplus data.
+- Boosting models excelled in the forecasting approach, highlighting the challenge of direct country prediction.
+- The LSTM model, while underperforming, points to the potential need for deeper architectures or more data in deep learning approaches. The variance in its performance is too high depending on the hyperparameters chosen (in some configurations it reached an f1 score of 0.8).
 
 ---

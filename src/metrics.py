@@ -5,6 +5,8 @@ Script containing the metrics used to evaluate the ETL and the performance of th
 import argparse
 import os
 from termcolor import colored
+import warnings
+warnings.filterwarnings("ignore")
 
 # Data processing imports
 import datetime

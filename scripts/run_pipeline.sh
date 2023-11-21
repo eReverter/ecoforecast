@@ -1,34 +1,83 @@
 #!/bin/bash
-export PYTHONPATH="${PYTHONPATH}:$(pwd)"
+export PYTHONPATH=$(pwd):$PYTHONPATH
 
-# You can run this script from the command line using:
-# ./run_pipeline.sh <start_date> <end_date> <raw_data_file> <processed_data_file> <model_file> <test_data_file> <predictions_file>
-# For example:
-# ./run_pipeline.sh 2020-01-01 2020-01-31 data/raw_data.csv data/processed_data.csv models/model.pkl data/test_data.csv predictions/predictions.json
+# echo "Running data ingestion for training data..."
+# python src/data/data_ingestion.py \
+#     --start_time "2022-01-01" \
+#     --end_time "2023-01-31" \
+#     --output_path data/raw/train
 
-# Get command line arguments
-start_date="$1"
-end_date="$2"
-raw_data_file="$3"
-processed_data_file="$4"
-model_file="$5"
-test_data_file="$6"
-predictions_file="$7"
+# echo "Running data ingestion for validation data..."
+# python src/data/data_ingestion.py \
+#     --start_time "2022-01-01" \
+#     --end_time "2023-01-31" \
+#     --output_path data/raw/validation
 
-# Run data_ingestion.py
-echo "Starting data ingestion..."
-python src/data_ingestion.py --start_date="$start_date" --end_date="$end_date" --output_file="$raw_data_file"
+# echo "Running data ingestion for holidays data..."
+# python src/data/holiday_ingestion.py \
+#     --start_year 2022 \
+#     --end_year 2023
 
-# Run data_processing.py
-echo "Starting data processing..."
-python src/data_processing.py --input_file="$raw_data_file" --output_file="$processed_data_file"
+# echo "Processing training data..."
+# python src/data/data_processing.py \
+#     --process_raw_data \
+#     --interpolate_zeros \
+#     --process_interim_data \
+#     --mode train
 
-# Run model_training.py
-echo "Starting model training..."
-python src/model_training.py --input_file="$processed_data_file" --model_file="$model_file"
+# echo "Processing validation data..."
+# python src/data/data_processing.py \
+#     --process_raw_data \
+#     --interpolate_zeros \
+#     --process_interim_data \
+#     --mode validation
 
-# Run model_prediction.py
-echo "Starting prediction..."
-python src/model_prediction.py --input_file="$test_data_file" --model_file="$model_file" --output_file="$predictions_file"
+# echo "Visualizing training data..."
+# python src/visualization/visualize.py \
+#     --mode train
+
+# echo "Visualizing validation data..."
+# python src/visualization/visualize.py \
+#     --mode validation
+
+# echo "Preparing data for evaluation..."
+# python src/data/prepare_data.py \
+#     --validation data/processed/validation.csv
+
+echo "Predicting with XGBoost CLS model..."
+python src/model/classification/xgboost/model_prediction.py \
+    --model models/classification/xgboost/model.json
+
+echo "Predicting with XGBoost REG model..."
+python src/model/forecasting/xgboost/model_prediction.py \
+    --model models/forecasting/xgboost/model.json
+
+echo "Predicting with LightGBM REG model..."
+python src/model/forecasting/lightgbm/model_prediction.py \
+    --model models/forecasting/lightgbm/model.txt
+
+echo "Predicting with LSTM model..."
+python src/model/forecasting/lstm/model_prediction.py \
+    --model models/forecasting/lstm/model.pth
+
+echo "Evaluating naive baseline predictions..."
+python src/metrics.py \
+    --predictions predictions/baseline.json
+
+echo "Evaluating XGBoost CLS predictions..."
+python src/metrics.py \
+    --predictions predictions/xgboost_cls_predictions.json
+
+echo "Evaluating XGBoost REG predictions..."
+python src/metrics.py \
+    --predictions predictions/xgboost_reg_predictions.json
+
+echo "Evaluating LightGBM predictions..."
+python src/metrics.py \
+    --predictions predictions/lightgbm_reg_predictions.json
+
+echo "Evaluating LSTM model predictions..."
+python src/metrics.py \
+    --predictions predictions/lstm_predictions.json
 
 echo "Pipeline completed."

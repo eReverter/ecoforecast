@@ -18,7 +18,7 @@ from src.model.forecasting.lightgbm.model_training import prepare_data
 
 ### GENERAL FUNCTIONS ###
 
-def load_model(model_path):
+def load_lgb_model(model_path):
     model = lgb.Booster(model_file=model_path)
     return model
 
@@ -30,7 +30,7 @@ def main():
     args = parser.parse_args()
 
     model_path = args.model
-    model = load_model(model_path)
+    model = load_lgb_model(model_path)
 
     # Load and prepare prediction data
     _, validation = load_data()

@@ -350,7 +350,7 @@ def process_raw_data(args):
     statistics.display_statistics()
 
     # Generate the report at the end of the processing
-    report_path = f'{REPORTS_DIR}/data_processing_report.txt'  # Define your report file path
+    report_path = f'{REPORTS_DIR}/{args.mode}_data_processing_report.txt'  # Define your report file path
     statistics.generate_report(report_path)
     
     return statistics
@@ -429,7 +429,7 @@ def process_interim_data(args):
     statistics.display_statistics()  # Display statistics at the end
 
     # Generate the report at the end of the processing
-    report_path = f'{REPORTS_DIR}/interim_data_processing_report.txt'  # Define your report file path
+    report_path = f'{REPORTS_DIR}/{args.mode}_interim_data_processing_report.txt'  # Define your report file path
     statistics.generate_report(report_path)
     return
 

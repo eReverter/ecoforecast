@@ -67,7 +67,7 @@ def main():
 
     # Model path
     model_name = 'xgboost'
-    model_path = os.path.join(MODELS_DIR, model_name)
+    model_path = os.path.join(MODELS_DIR, 'classification', model_name)
 
     # Data Preparation
     logger.info("Preparing data...")
@@ -102,9 +102,6 @@ def main():
     model.save_model(os.path.join(model_path, 'model.json'))
 
     logger.info(f"Model trained and saved at {model_path}")
-
-    # Check the classes are being considered in the right order
-    print(model.predict_proba(x_train.iloc[:1]))
 
 if __name__ == "__main__":
     main()
