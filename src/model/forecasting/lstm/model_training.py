@@ -66,11 +66,11 @@ class LSTMModel(nn.Module):
     def forward(self, input_seq):
         lstm_out1, _ = self.lstm1(input_seq)
         dropout_out1 = self.dropout1(lstm_out1)
-        lstm_out2, _ = self.lstm2(dropout_out1)
-        dropout_out2 = self.dropout2(lstm_out2)
+        # lstm_out2, _ = self.lstm2(dropout_out1)
+        # dropout_out2 = self.dropout2(lstm_out2)
 
         # Getting the output from the last LSTM layer for each sequence
-        predictions = self.linear(dropout_out2[:, -1, :])
+        predictions = self.linear(dropout_out1[:, -1, :])
         return predictions
 
 ### GENERAL FUNCTIONS ###
@@ -209,8 +209,8 @@ def main():
     CONFIG_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'model_config.json')
     if args.use_grid:
         hidden_layer_sizes = [50, 100, 150]
-        learning_rates = [0.001, 0.01]
-        num_epochs = [5]
+        learning_rates = [0.0001, 0.001, 0.01]
+        num_epochs = [5, 10]
 
         best_val_loss = float('inf')
         best_model_params = {}

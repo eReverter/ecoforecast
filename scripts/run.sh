@@ -28,7 +28,7 @@ export PYTHONPATH=$(pwd):$PYTHONPATH
 # python src/model/forecasting/lightgbm/model_training.py
 
 python src/model/forecasting/lstm/model_training.py \
-    --use-grid \
+    # --use-grid \
     # --scaler 'minmax'
 
 python src/model/forecasting/lstm/model_prediction.py \

@@ -1,1 +1,1 @@
-{"hidden_layer_size": 150, "learning_rate": 0.01, "epochs": 5}
+{"hidden_layer_size": 60, "learning_rate": 0.01, "epochs": 10}
