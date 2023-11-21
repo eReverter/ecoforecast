@@ -8,7 +8,7 @@ This repository contains my submission for the [NUWE: Schneider Electric Europea
 
 Approaches include classification (directly predicting the country) and forecasting (predicting energy surplus and determining the country with the maximum surplus). I have employed XGBoost, LightGBM, an LSTM-based model, and a baseline method for this challenge.
 
-The entire year of 2022 serves as training data, while the first four months of 2023 are used for testing. The repository structure is as follows:
+**The entire year of 2022 serves as training data, while the first four months of 2023 are used for testing**. The repository structure is as follows:
 
 ```
 .
