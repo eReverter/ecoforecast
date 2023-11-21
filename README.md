@@ -78,7 +78,7 @@ conda env create -f environment.yml
 
 ### Data
 
-Run the complete data pipeline:
+Run the complete data pipeline, from fetching data to evaluating predictions of already trained models:
 
 ```bash
 ./scripts/run_pipeline.sh
