@@ -18,7 +18,7 @@ export PYTHONPATH=$(pwd):$PYTHONPATH
 #     --start_year 2022 \
 #     --end_year 2023
 
-# echo "Processing training data..."
+echo "Processing training data..."
 python src/data/data_processing.py \
     --process_raw_data \
     --interpolate_zeros \
@@ -43,6 +43,18 @@ python src/visualization/visualize.py \
 echo "Preparing data for evaluation..."
 python src/data/prepare_data.py \
     --validation data/processed/validation.csv
+
+echo "Training XGBoost CLS model..."
+python src/model/classification/xgboost/model_training.py 
+
+echo "Training XGBoost REG model..."
+python src/model/forecasting/xgboost/model_training.py
+
+echo "Training LightGBM REG model..."
+python src/model/forecasting/lightgbm/model_training.py
+
+echo "Training LSTM model..."
+python src/model/forecasting/lstm/model_training.py
 
 echo "Predicting with XGBoost CLS model..."
 python src/model/classification/xgboost/model_prediction.py \

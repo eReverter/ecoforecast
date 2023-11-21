@@ -7,15 +7,15 @@ export PYTHONPATH=$(pwd):$PYTHONPATH
 #     --end_time "2023-01-31" \
 #     --output_path data/raw/train
 
-python src/data/data_processing.py \
-    --process_interim_data \
-    --mode train
+# python src/data/data_processing.py \
+#     --process_interim_data \
+#     --mode train
 
-python src/visualization/visualize.py \
-    --mode train
+# python src/visualization/visualize.py \
+#     --mode train
 
-python src/visualization/visualize.py \
-    --mode validation
+# python src/visualization/visualize.py \
+#     --mode validation
 
 # python src/data/prepare_data.py \
 #     --validation data/processed/validation.csv
@@ -25,12 +25,11 @@ python src/visualization/visualize.py \
 
 # python src/model/forecasting/lstm/model_training.py
 
-# python src/model/forecasting/lstm/model_training.py \
+# python src/model/forecasting/xgboost/model_training.py \
     # --use-grid \
-    # --scaler 'minmax'
 
 # python src/model/forecasting/lstm/model_prediction.py \
 #     --model models/forecasting/lstm/model.pth \
     
 # python src/metrics.py \
-#     --predictions predictions/lstm_predictions.json
+    # --predictions predictions/lstm_predictions.json

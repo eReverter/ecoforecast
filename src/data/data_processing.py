@@ -59,10 +59,11 @@ def load_raw_data(etype, region, mode='train'):
     # One timestamp is enough
     df['timestamp'] = df['StartTime'].str.replace('Z', '')
     df['timestamp'] = pd.to_datetime(df['timestamp'], format='%Y-%m-%dT%H:%M%z')
+    df.dropna(subset=['AreaID'], inplace=True)
     df.drop(columns=['StartTime', 'EndTime', 'AreaID'], inplace=True)
     df.set_index('timestamp', inplace=True)
     df.reset_index(inplace=True)
-    assert len(df) == c, 'Some data is missing'
+    # assert len(df) == c, 'Some data is missing'
     return df
 
 def _update_columns(df, etype):

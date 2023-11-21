@@ -1,5 +1,5 @@
 Interim Data Processing Report
-Generated on: 2023-11-21 03:26:54.944800
+Generated on: 2023-11-21 09:44:16.466866
 
 File: UK_gen.csv
 	Pre-processing shape: (1369, 3)
@@ -18,7 +18,7 @@ File: UK_load.csv
 	Post-processing shape: (910, 2)
 
 File: HU_gen.csv
-	Pre-processing shape: (15127, 3)
+	Pre-processing shape: (15110, 3)
 	Post-processing shape: (2161, 2)
 
 File: HU_load.csv
@@ -42,7 +42,7 @@ File: SP_gen.csv
 	Post-processing shape: (2161, 2)
 
 File: IT_gen.csv
-	Pre-processing shape: (17280, 3)
+	Pre-processing shape: (17115, 3)
 	Post-processing shape: (2160, 2)
 
 File: NE_gen.csv

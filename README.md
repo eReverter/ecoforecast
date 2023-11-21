@@ -115,7 +115,7 @@ python src/data/holiday_ingestion.py \
 
 #### Process Data
 
-Data preprocessing is crucial. My approach includes merging all data into hourly intervals, interpolating zeros, and handling NaNs based on the model requirements.
+Data preprocessing is crucial. My approach includes dropping duplicates*, merging all data into hourly intervals, interpolating zeros, and handling NaNs based on the model requirements.
 
 In processing the data, I employed two distinct aggregation strategies:
 
@@ -129,6 +129,8 @@ Key steps:
 - Consider only renewable energy (codes in `src/definitions.py`).
 - Track data changes using `DataProcessingStatistics` and `InterimDataProcessingStatistics` that can be found in `src/metrics.py`. Reports generated are in `reports/`.
 - Aggregate data to hour intervals in a significant way.
+
+*It appears that observations with AreaID set to NaN are duplicates. This cannot be said for sure but the units of their values are either identical or differ from barely no units. Thus, it is chosen they should be removed and are treated as a system issue.
 
 A glimpse of data processing tracking:
 
@@ -257,13 +259,13 @@ python src/metrics.py --predictions predictions/{prediction_path}.json
 
 Results overview:
 
-| Model               | F1 Score | Precision | Recall   |
-|---------------------|----------|-----------|----------|
-| Naive Baseline      | 0.89     | 0.89      | 0.89     |
-| XGBoost (Class.)    | 0.61     | 0.54      | 0.71     |
-| XGBoost (Forecast.) | 0.92     | 0.92      | 0.92     |
-| LightGBM            | 0.92     | 0.92      | 0.92     |
-| LSTM                | 0.17     | 0.19      | 0.17     |
+| Model                | F1 Score | Precision | Recall |
+|----------------------|----------|-----------|--------|
+| Naive Baseline       | 0.75     | 0.93      | 0.66   |
+| XGBoost (Class.)     | 0.72     | 0.65      | 0.80   |
+| XGBoost (Forecast.)  | 0.94     | 0.94      | 0.94   |
+| LightGBM             | 0.94     | 0.94      | 0.95   |
+| LSTM                 | 0.02     | 0.80      | 0.01   |
 
 ## Conclusion
 
@@ -271,6 +273,6 @@ This project's exploration into renewable energy surplus prediction across Europ
 
 - The Naive Baseline model showed unexpectedly high effectiveness, indicating predictable patterns in the energy surplus data.
 - Boosting models excelled in the forecasting approach, highlighting the challenge of direct country prediction.
-- The LSTM model, while underperforming, points to the potential need for deeper architectures or more data in deep learning approaches. The variance in its performance is too high depending on the hyperparameters chosen (in some configurations it reached an f1 score of 0.8).
+- The basic LSTM model, completely underperforming, points to the potential need for a tailor made architecture, more data, and of course, more time invested in optimizing it. The variance in its performance is too high depending on the chosen hyperparametrs.
 
 ---

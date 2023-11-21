@@ -225,7 +225,7 @@ def prepare_reference_predictions(validation_file):
 
     # Build predictions.json with the target column
     predictions = validation[['timestamp', 'target']]
-    predictions.to_json(os.path.join(PREDICTIONS_DIR, 'predictions.json'), orient='records')
+    predictions.to_json(os.path.join(PREDICTIONS_DIR, 'val_predictions.json'), orient='records')
 
 ### MAIN ###
 
