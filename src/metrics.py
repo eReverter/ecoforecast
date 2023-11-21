@@ -166,7 +166,7 @@ def main():
     args = parser.parse_args()
 
     # Load predictions and actual values from the .json files
-    actual = pd.read_json(os.path.join(PREDICTIONS_DIR, 'predictions.json'))
+    actual = pd.read_json(os.path.join(PREDICTIONS_DIR, 'val_predictions.json'))
     predictions = pd.read_json(args.predictions)
 
     # Ensure the values are paired by timestamp if possible
