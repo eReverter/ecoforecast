@@ -63,7 +63,7 @@ Every script, object, and function within the project contain the details on the
 To set up the repository and reproduce the results:
 
 ```bash
-git clone [repo-link]
+git clone https://github.com/eReverter/ecoforecast.git
 ```
 
 ```bash
