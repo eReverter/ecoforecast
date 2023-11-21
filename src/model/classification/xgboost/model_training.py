@@ -1,17 +1,20 @@
 """
-Enhanced script to train a classification model using XGBoost.
+Script to train a classification model using XGBoost.
 """
-import pandas as pd
-import numpy as np
-import xgboost as xgb
+# General imports
 import argparse
-import json
 import os
-from sklearn.preprocessing import LabelEncoder
-import matplotlib.pyplot as plt
+import json
 import warnings
 warnings.filterwarnings('ignore', category=FutureWarning)
 
+# Data related imports
+import numpy as np
+from sklearn.preprocessing import LabelEncoder
+import xgboost as xgb
+
+# Local imports
+from src.definitions import MODELS_DIR
 from src.data.prepare_data import (
     load_data,
     add_is_weekend,
@@ -20,21 +23,30 @@ from src.data.prepare_data import (
     get_ohe_from_cat,
     get_cls_target,
 )
-from src.definitions import PROCESSED_DATA_DIR, MODELS_DIR
 from src.config import setup_logger
 
+# Setup logger
 logger = setup_logger()
 
+### GENERAL FUNCTIONS ###
 def prepare_data(df):
-    # Add weekend feature and compute surplus
+    """
+    Prepare the data for training a classification  model.
+
+    :param df: DataFrame with the data.
+    :return: DataFrame with the data prepared.
+    """
+    # Add features
     df = add_is_weekend(df)
     df = get_surplus(df)
     df = get_curr_max(df)
     df = get_ohe_from_cat(df, cat='curr_max')
     
-    # Remove all cols that have 'load' and 'gen' in its names
+    # Remove all cols that have 'load' and 'gen' in its names. Only surplus will be used.
     df = df.drop(df.filter(regex='load|gen').columns, axis=1)
     return df
+
+### MAIN ###
 
 def parser_add_arguments(parser):
     parser.add_argument('--debug', action='store_true', help='Debug mode')
@@ -44,8 +56,6 @@ def main():
     parser = argparse.ArgumentParser(description='Train XGBoost model')
     parser_add_arguments(parser)
     args = parser.parse_args()
-
-    # DEBUG = args.debug
 
     # Load data
     train, _, = load_data()
@@ -76,10 +86,6 @@ def main():
     # Prepare data for training in XGBoost
     x_train = train.drop(['timestamp', 'target'], axis=1)
     y_train = train['target']
-
-    # if DEBUG:
-    #     x_train = x_train.iloc[:1000]
-    #     y_train = y_train.iloc[:1000]
 
     # Model Training
     logger.info("Training model...")

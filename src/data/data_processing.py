@@ -1,12 +1,16 @@
 """
 Script to process raw data into interim and processed data.
 """
+# General imports
 import argparse
 import os
-import numpy as np
-import pandas as pd
 from tqdm import tqdm
 
+# Data related imports
+import numpy as np
+import pandas as pd
+
+# Local imports
 from src.definitions import (
     RAW_DATA_DIR, 
     INTERIM_DATA_DIR,
@@ -16,11 +20,15 @@ from src.definitions import (
     TYPE,
     REGION)
 
+# Local imports
 from src.config import setup_logger
-from src.metrics import StatisticsETL, DataProcessingStatistics, InterimDataProcessingStatistics
+from src.metrics import (
+    DataProcessingStatistics, 
+    InterimDataProcessingStatistics
+)
 
+# Initialize logger
 logger = setup_logger()
-statistics = StatisticsETL()
 
 ### RAW DATA PROCESSING -> INTERIM DATA ###
 
@@ -115,11 +123,8 @@ def fill_time_series_gaps(df, timestamp_col, groupby_cols, target_col):
     """
     # Ensure datetimes are timezone-aware
     df[timestamp_col] = pd.to_datetime(df[timestamp_col], utc=True)
-
     df.sort_values(by=groupby_cols + [timestamp_col], inplace=True)
-
     filled_series = []
-
     for group_keys, group in df.groupby(groupby_cols):
         full_range = pd.date_range(start=group[timestamp_col].min(), 
                                    end=group[timestamp_col].max(), 
@@ -246,16 +251,16 @@ def interpolate_zeros(df, column_name):
     :param column_name: Name of the column containing the values.
     :return: DataFrame with zeros interpolated.
     """
-    # Step 1: Create a mask of original NaN values
+    # Create a mask of original NaN values
     original_na_mask = df[column_name].isna()
 
-    # Step 2: Replace 0s with NaNs temporarily
+    # Replace 0s with NaNs temporarily
     df[column_name].replace(0, np.nan, inplace=True)
 
-    # Step 3: Perform interpolation on NaNs (which includes the original 0s)
+    # Perform interpolation on NaNs (which includes the original 0s)
     df[column_name].interpolate(method='linear', direction='both', inplace=True)
 
-    # Step 4: Restore original NaN values using the mask
+    # Restore original NaN values using the mask
     df.loc[original_na_mask, column_name] = np.nan
 
     return df
@@ -266,7 +271,8 @@ def process_raw_data(args):
 
     :param args: Arguments from the command line.
     """
-    statistics = DataProcessingStatistics()  # Instantiate the statistics tracking class
+    # Instantiate the statistics tracking class
+    statistics = DataProcessingStatistics()  
 
     tqdm_bar = tqdm(total=len(REGION) * len(TYPE), desc='Processing raw data')
     for region in REGION:
@@ -338,16 +344,16 @@ def process_raw_data(args):
                 statistics.log_loss_reason(etype, region, 'Aggregated to hourly', pre_aggregate_count - post_aggregate_count)
 
             # Save the DataFrame
-            # df.to_csv(f'{INTERIM_DATA_DIR}/{args.mode}/{region}_{etype}.csv', index=False)
+            df.to_csv(f'{INTERIM_DATA_DIR}/{args.mode}/{region}_{etype}.csv', index=False)
 
-    statistics.display_statistics()  # Display current statistics
+    # Display the statistics in the terminal
+    statistics.display_statistics()
 
     # Generate the report at the end of the processing
     report_path = f'{REPORTS_DIR}/data_processing_report.txt'  # Define your report file path
     statistics.generate_report(report_path)
     
     return statistics
-
 
 ### INTERIM DATA PROCESSING -> PROCESSED DATA ###
 
@@ -356,7 +362,6 @@ def aggregate_to_green_energy(df):
     Aggregate each hourly timestamp to a single row, with all the different energy_type aggregated into one value.
 
     :param df: DataFrame with the interim data.
-    :param filter_out: List of energy_type to filter out.
     :return: DataFrame with aggregated values.
     """
     # Group by timestamp and aggregate
@@ -368,6 +373,8 @@ def aggregate_to_green_energy(df):
 def process_interim_data(args):
     """
     Load, merge, and save datasets from the interim data folder.
+
+    :param args: Arguments from the command line.
     """
     statistics = InterimDataProcessingStatistics()  # Instantiate statistics tracking
 
@@ -416,8 +423,8 @@ def process_interim_data(args):
     statistics.update_merged_stats(df)  # Update merged DataFrame stats
 
     # Save the DataFrame
-    # logger.info(f'Saving {args.mode} data, shape: {df.shape}')
-    # df.to_csv(f'{PROCESSED_DATA_DIR}/{args.mode}.csv', index=False)
+    logger.info(f'Saving {args.mode} data, shape: {df.shape}')
+    df.to_csv(f'{PROCESSED_DATA_DIR}/{args.mode}.csv', index=False)
 
     statistics.display_statistics()  # Display statistics at the end
 
@@ -425,7 +432,6 @@ def process_interim_data(args):
     report_path = f'{REPORTS_DIR}/interim_data_processing_report.txt'  # Define your report file path
     statistics.generate_report(report_path)
     return
-
 
 ### MAIN ###
 

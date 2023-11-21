@@ -1,3 +1,8 @@
+"""
+Script containing the utility functions to ingest data.
+
+Provided by the NUWE team.
+"""
 import requests
 from datetime import datetime, timedelta
 import xml.etree.ElementTree as ET

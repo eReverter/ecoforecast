@@ -1,19 +1,32 @@
+"""
+Script to make predictions using an XGBoost trained model for regression.
+"""
+# General imports
 import argparse
-import lightgbm as lgb
-import pandas as pd
 import os
-from src.data.prepare_data import load_data  # Adjust imports as needed
-from src.model.forecasting.lightgbm.model_training import prepare_data  # Adjust import path
-from src.definitions import PREDICTIONS_DIR
+
+# Data related imports
+import lightgbm as lgb
+
+# Local imports
+from src.definitions import (
+    PREDICTIONS_DIR,
+    LIGHTGBM_LAGS,
+)
+from src.data.prepare_data import load_data
+from src.model.forecasting.lightgbm.model_training import prepare_data
+
+### GENERAL FUNCTIONS ###
 
 def load_model(model_path):
-    model = lgb.Booster(model_file=model_path)  # Load LightGBM model
+    model = lgb.Booster(model_file=model_path)
     return model
+
+### MAIN ###
 
 def main():
     parser = argparse.ArgumentParser(description='Make predictions using LightGBM')
     parser.add_argument('--model', type=str, help='Path to model')
-    parser.add_argument('--data', type=str, help='Path to prediction data')
     args = parser.parse_args()
 
     model_path = args.model
@@ -21,7 +34,7 @@ def main():
 
     # Load and prepare prediction data
     _, validation = load_data()
-    validation = prepare_data(validation, lags=[1,2,3])
+    validation = prepare_data(validation, lags=LIGHTGBM_LAGS)
     x_predict = validation.drop(['timestamp', 'series_id'], axis=1)  # Drop non-feature columns
 
     # Make predictions

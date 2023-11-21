@@ -1,3 +1,8 @@
+"""
+Script to ingest raw data from the ENTSOE API.
+
+Provided by the NUWE team.
+"""
 import argparse
 import datetime
 import pandas as pd
@@ -13,7 +18,7 @@ def get_load_data_from_entsoe(regions, periodStart='202302240000', periodEnd='20
     # General parameters for the API
     # Refer to https://transparency.entsoe.eu/content/static_content/Static%20content/web%20api/Guide.html#_documenttype
     params = {
-        'securityToken': '1d9cd4bd-f8aa-476c-8cc1-3442dc91506d',
+        'securityToken': '2334f370-0c85-405e-bb90-c022445bd273',
         'documentType': 'A65',
         'processType': 'A16',
         'outBiddingZone_Domain': 'FILL_IN', # used for Load data

@@ -1,12 +1,25 @@
+# General imports
 import argparse
+import os
+from tqdm import tqdm
+
+# Data related imports
 import datetime
 import pandas as pd
-from src.utils import perform_get_request, xml_to_load_dataframe, xml_to_gen_data
-from src.config import setup_logger
-from tqdm import tqdm
-import os
 
+# Local imports
+from src.utils import (
+    perform_get_request, 
+    xml_to_load_dataframe, 
+    xml_to_gen_data
+)
+
+from src.config import setup_logger
+
+# Setup logger
 logger = setup_logger()
+
+### GENERAL FUNCTIONS ###
 
 def process_data_in_chunks(url, params, region, area_code, start, end, chunk_size, xml_to_dataframe, output_path, data_type):
     """
@@ -90,6 +103,8 @@ def get_gen_data_from_entsoe(regions, start_time, end_time, output_path):
     for region, area_code in tqdm(regions.items(), desc="Fetching gen data"):
             logger.info(f'MAIN: Fetching gen data from {region} for the period {start_time} - {end_time}...')
             process_data_in_chunks(url, params, region, area_code, start_time, end_time, datetime.timedelta(days=365), xml_to_gen_data, output_path, 'gen')
+
+### MAIN ###
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Data ingestion script for Energy Forecasting Hackathon')

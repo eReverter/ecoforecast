@@ -1,9 +1,18 @@
-import logging
+"""
+Script containing the logger setup.
+"""
 import os
+import logging
 from logging.handlers import RotatingFileHandler
 
-def setup_logger(log_file=None):
-    logger = logging.getLogger('ForecastLogger')
+def setup_logger(log_file=None, name='ForecastLogger'):
+    """
+    Set up a logger for the whole project to use.
+
+    :param log_file: Path to the log file. If None, the log file will be saved to the project root directory.
+    :param name: Name of the logger.
+    """
+    logger = logging.getLogger(name)
     logger.setLevel(logging.INFO)
 
     # Remove all handlers that might have been added previously

@@ -1,13 +1,19 @@
-
+"""
+Script to compute baseline predictions that we aim to beat.
+"""
+# General imports
 import argparse
+import os
+import pandas as pd
+
+# Local imports
 from src.definitions import (
     PROCESSED_DATA_DIR, 
     EXTERNAL_DATA_DIR,
     REGION,
     REGION_MAPPING,
     PREDICTIONS_DIR)
-import pandas as pd
-import os
+
 from src.data.prepare_data import (
     get_surplus,
 )

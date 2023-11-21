@@ -1,21 +1,33 @@
+"""
+Script to make predictions using an XGBoost trained model for regression.
+"""
+# General imports
 import argparse
-import xgboost as xgb
-import pandas as pd
-import numpy as np
 import os
-from src.data.prepare_data import load_data  # Adjust imports as needed
+
+# Data related imports
+import xgboost as xgb
+
+# Local imports
+from src.definitions import (
+    PREDICTIONS_DIR,
+    XGBOOST_LAGS,
+)
+from src.data.prepare_data import load_data
 from src.model.forecasting.xgboost.model_training import prepare_data
-from src.definitions import PREDICTIONS_DIR
+
+### GENERAL FUNCTIONS ###
 
 def load_model(model_path):
-    model = xgb.XGBRegressor()  # Make sure to use XGBRegressor
+    model = xgb.XGBRegressor()
     model.load_model(model_path)
     return model
+
+### MAIN ###
 
 def main():
     parser = argparse.ArgumentParser(description='Make predictions')
     parser.add_argument('--model', type=str, help='Path to model')
-    parser.add_argument('--data', type=str, help='Path to prediction data')
     args = parser.parse_args()
 
     model_path = args.model
@@ -23,7 +35,7 @@ def main():
 
     # Load and prepare prediction data
     _, validation = load_data()
-    validation = prepare_data(validation, lags=[1,2,3])
+    validation = prepare_data(validation, lags=XGBOOST_LAGS)
     x_predict = validation.drop(['timestamp', 'series_id'], axis=1)  # Drop non-feature columns
 
     # Make predictions

@@ -1,16 +1,23 @@
 """
-Enhanced script to train a regression model using XGBoost.
+Script to train a regression model using XGBoost.
 """
+# General imports
 import argparse
 import json
 import os
-import numpy as np
-from sklearn.metrics import mean_squared_error
-from sklearn.model_selection import train_test_split, GridSearchCV
-import xgboost as xgb
 import warnings
 warnings.filterwarnings('ignore', category=FutureWarning)
 
+# Data related imports
+import numpy as np
+from sklearn.metrics import mean_squared_error
+from sklearn.model_selection import (
+    train_test_split, 
+    GridSearchCV,
+)
+import xgboost as xgb
+
+# Local imports
 from src.data.prepare_data import (
     load_data,
     add_is_weekend,
@@ -25,12 +32,22 @@ from src.definitions import (
     MODELS_DIR,
     SEED,
     VAL_SIZE,
+    XGBOOST_LAGS,
 )
 from src.config import setup_logger
 
+# Setup logger
 logger = setup_logger()
 
+### GENERAL FUNCTIONS ###
+
 def prepare_data(df, lags):
+    """
+    Prepare the data for training a regression (forecasting-like) model.
+    
+    :param df: DataFrame containing the data.
+    :param lags: List of lags to use for the model.
+    """
     df = add_is_weekend(df)
     df = get_surplus(df)
     df = convert_to_timeseries(df, metadata_columns=['is_weekend'])
@@ -41,6 +58,8 @@ def prepare_data(df, lags):
     df = df.replace(0, np.nan)  # Replace 0s with NaNs
     df.dropna(inplace=True)  # Drop rows with NaNs created by lagging and shifting
     return df
+
+### MAIN ###
 
 def parser_add_arguments(parser):
     parser.add_argument('--use-grid', action='store_true', help='Use grid search for model tuning')
@@ -56,7 +75,7 @@ def main():
 
     # Data Preparation
     logger.info("Preparing data...")
-    train = prepare_data(train, lags=[1,2,3])
+    train = prepare_data(train, lags=XGBOOST_LAGS)
     train = get_forecast_target(train, prediction_horizon=1)
     train.dropna(subset=['target'], inplace=True)
 
@@ -74,7 +93,6 @@ def main():
             'n_estimators': [100, 500, 1000],
             'max_depth': [3, 6, 10],
             'learning_rate': [0.01, 0.05, 0.1],
-            # Add more parameters here if desired
         }
         grid_search = GridSearchCV(
             estimator=xgb.XGBRegressor(),
@@ -95,6 +113,9 @@ def main():
             model_config = json.load(f)
 
         best_model = xgb.XGBRegressor(**model_config)
+
+        # Train model
+        print("Training model...")
         best_model.fit(x_train, y_train)
 
     # Validate model

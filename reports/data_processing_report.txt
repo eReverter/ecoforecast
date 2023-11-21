@@ -1,164 +1,182 @@
 Data Processing Report
-Generated on: 2023-11-20 16:09:58.207816
+Generated on: 2023-11-20 20:23:29.606346
 
-Energy Type: load, Region: SP, Estimated Frequency: 0 days 00:15:00
+Energy Type: load, Region: SP
+ Estimated Frequency: 0 days 00:15:00
   original Count: 24816
   processed Count: 8761
   missing_values Count: 0
   imputed_values Count: 0
   zero_values Count: 0
   Loss Reasons:
-    Aggregated to hourly: 16055
+	Aggregated to hourly: 16055
 
-Energy Type: gen, Region: SP, Estimated Frequency: 0 days 00:15:00
+Energy Type: gen, Region: SP
+ Estimated Frequency: 0 days 00:15:00
   original Count: 498246
   processed Count: 337696
   missing_values Count: 0
   imputed_values Count: 0
   zero_values Count: 0
   Loss Reasons:
-    Filtered non-green energy: 248160
-    Aggregated to hourly: 162476
+	Filtered non-green energy: 248160
+	Aggregated to hourly: 162476
 
-Energy Type: load, Region: UK, Estimated Frequency: 0 days 00:30:00
+Energy Type: load, Region: UK
+ Estimated Frequency: 0 days 00:30:00
   original Count: 9382
   processed Count: 4775
   missing_values Count: 0
   imputed_values Count: 0
   zero_values Count: 0
   Loss Reasons:
-    Aggregated to hourly: 4607
+	Aggregated to hourly: 4607
 
-Energy Type: gen, Region: UK, Estimated Frequency: 0 days 00:30:00
+Energy Type: gen, Region: UK
+ Estimated Frequency: 0 days 00:30:00
   original Count: 47308
   processed Count: 15878
   missing_values Count: 0
   imputed_values Count: 0
   zero_values Count: 0
   Loss Reasons:
-    Filtered non-green energy: 34664
-    Aggregated to hourly: 9410
+	Filtered non-green energy: 34664
+	Aggregated to hourly: 9410
 
-Energy Type: load, Region: DE, Estimated Frequency: 0 days 00:15:00
+Energy Type: load, Region: DE
+ Estimated Frequency: 0 days 00:15:00
   original Count: 35040
   processed Count: 8761
   missing_values Count: 0
   imputed_values Count: 0
   zero_values Count: 0
   Loss Reasons:
-    Aggregated to hourly: 26279
+	Aggregated to hourly: 26279
 
-Energy Type: gen, Region: DE, Estimated Frequency: 0 days 00:15:00
+Energy Type: gen, Region: DE
+ Estimated Frequency: 0 days 00:15:00
   original Count: 665759
   processed Count: 499328
   missing_values Count: 0
   imputed_values Count: 0
   zero_values Count: 0
   Loss Reasons:
-    Filtered non-green energy: 245280
-    Aggregated to hourly: 341630
+	Filtered non-green energy: 245280
+	Aggregated to hourly: 341630
 
-Energy Type: load, Region: DK, Estimated Frequency: 0 days 01:00:00
+Energy Type: load, Region: DK
+ Estimated Frequency: 0 days 01:00:00
   original Count: 8760
   processed Count: 8760
   missing_values Count: 0
   imputed_values Count: 0
   zero_values Count: 0
 
-Energy Type: gen, Region: DK, Estimated Frequency: 0 days 01:00:00
+Energy Type: gen, Region: DK
+ Estimated Frequency: 0 days 01:00:00
   original Count: 70069
   processed Count: 70076
   missing_values Count: 0
   imputed_values Count: 0
   zero_values Count: 0
   Loss Reasons:
-    Filtered non-green energy: 35031
+	Filtered non-green energy: 35031
 
-Energy Type: load, Region: HU, Estimated Frequency: 0 days 00:15:00
+Energy Type: load, Region: HU
+ Estimated Frequency: 0 days 00:15:00
   original Count: 35040
   processed Count: 8761
   missing_values Count: 0
   imputed_values Count: 0
   zero_values Count: 0
   Loss Reasons:
-    Aggregated to hourly: 26279
+	Aggregated to hourly: 26279
 
-Energy Type: gen, Region: HU, Estimated Frequency: 0 days 00:15:00
+Energy Type: gen, Region: HU
+ Estimated Frequency: 0 days 00:15:00
   original Count: 490560
   processed Count: 306607
   missing_values Count: 0
   imputed_values Count: 0
   zero_values Count: 0
   Loss Reasons:
-    Filtered non-green energy: 245280
-    Aggregated to hourly: 183953
+	Filtered non-green energy: 245280
+	Aggregated to hourly: 183953
 
-Energy Type: load, Region: SE, Estimated Frequency: 0 days 01:00:00
+Energy Type: load, Region: SE
+ Estimated Frequency: 0 days 01:00:00
   original Count: 8760
   processed Count: 8760
   missing_values Count: 0
   imputed_values Count: 0
   zero_values Count: 0
 
-Energy Type: gen, Region: SE, Estimated Frequency: 0 days 01:00:00
+Energy Type: gen, Region: SE
+ Estimated Frequency: 0 days 01:00:00
   original Count: 53585
   processed Count: 54616
   missing_values Count: 0
   imputed_values Count: 0
   zero_values Count: 0
   Loss Reasons:
-    Filtered non-green energy: 26277
+	Filtered non-green energy: 26277
 
-Energy Type: load, Region: IT, Estimated Frequency: 0 days 01:00:00
+Energy Type: load, Region: IT
+ Estimated Frequency: 0 days 01:00:00
   original Count: 8760
   processed Count: 8760
   missing_values Count: 0
   imputed_values Count: 0
   zero_values Count: 0
 
-Energy Type: gen, Region: IT, Estimated Frequency: 0 days 01:00:00
+Energy Type: gen, Region: IT
+ Estimated Frequency: 0 days 01:00:00
   original Count: 125160
   processed Count: 139178
   missing_values Count: 0
   imputed_values Count: 0
   zero_values Count: 0
   Loss Reasons:
-    Filtered non-green energy: 52560
-    Aggregated to hourly: 6022
+	Filtered non-green energy: 52560
+	Aggregated to hourly: 6022
 
-Energy Type: load, Region: PO, Estimated Frequency: 0 days 01:00:00
+Energy Type: load, Region: PO
+ Estimated Frequency: 0 days 01:00:00
   original Count: 8760
   processed Count: 8760
   missing_values Count: 0
   imputed_values Count: 0
   zero_values Count: 0
 
-Energy Type: gen, Region: PO, Estimated Frequency: 0 days 01:00:00
+Energy Type: gen, Region: PO
+ Estimated Frequency: 0 days 01:00:00
   original Count: 96360
   processed Count: 105120
   missing_values Count: 0
   imputed_values Count: 0
   zero_values Count: 0
   Loss Reasons:
-    Filtered non-green energy: 43800
+	Filtered non-green energy: 43800
 
-Energy Type: load, Region: NE, Estimated Frequency: 0 days 00:15:00
+Energy Type: load, Region: NE
+ Estimated Frequency: 0 days 00:15:00
   original Count: 35040
   processed Count: 8761
   missing_values Count: 0
   imputed_values Count: 0
   zero_values Count: 0
   Loss Reasons:
-    Aggregated to hourly: 26279
+	Aggregated to hourly: 26279
 
-Energy Type: gen, Region: NE, Estimated Frequency: 0 days 00:15:00
+Energy Type: gen, Region: NE
+ Estimated Frequency: 0 days 00:15:00
   original Count: 700800
   processed Count: 394205
   missing_values Count: 0
   imputed_values Count: 0
   zero_values Count: 0
   Loss Reasons:
-    Filtered non-green energy: 350400
-    Aggregated to hourly: 306595
+	Filtered non-green energy: 350400
+	Aggregated to hourly: 306595
 
 End of Report

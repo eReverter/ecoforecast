@@ -1,3 +1,6 @@
+"""
+Script containing the common variables of the project.
+"""
 import os
 
 ROOT_DIR = os.path.dirname(os.path.join('..', os.path.dirname(os.path.realpath(__file__))))
@@ -56,3 +59,7 @@ REGION_MAPPING = {
 
 SEED = 3
 VAL_SIZE = 0.1
+
+XGBOOST_LAGS = [1, 2, 3]
+LIGHTGBM_LAGS = [1, 2, 3]
+LSTM_LAGS = 3

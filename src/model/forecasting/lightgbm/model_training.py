@@ -1,20 +1,23 @@
 """
-Enhanced script to train a regression model using LightGBM.
+Script to train a regression model using LightGBM.
 """
-# Standard library imports
+# General imports
 import argparse
 import json
 import os
 import warnings
+warnings.filterwarnings('ignore', category=FutureWarning)
 
-# Third-party imports
-import lightgbm as lgb
+# Data related imports
 import numpy as np
+import lightgbm as lgb
 from sklearn.metrics import mean_squared_error
-from sklearn.model_selection import train_test_split, GridSearchCV
+from sklearn.model_selection import (
+    train_test_split, 
+    GridSearchCV,
+)
 
-# Local application imports
-from src.config import setup_logger
+# Local imports
 from src.data.prepare_data import (
     load_data,
     add_is_weekend,
@@ -28,17 +31,23 @@ from src.data.prepare_data import (
 from src.definitions import (
     MODELS_DIR, 
     SEED, 
-    VAL_SIZE
+    VAL_SIZE,
+    LIGHTGBM_LAGS,
 )
+from src.config import setup_logger
 
-# Suppress specific warnings for cleaner output
-warnings.filterwarnings('ignore', category=FutureWarning)
-
-# Initialize logger
+# Setup logger
 logger = setup_logger()
 
-# Functions
+#### GENERAL FUNCTIONS ####
+
 def prepare_data(df, lags):
+    """
+    Prepare the data for training a regression (forecasting-like) model.
+    
+    :param df: DataFrame containing the data.
+    :param lags: List of lags to use for the model.
+    """
     df = add_is_weekend(df)
     df = get_surplus(df)
     df = convert_to_timeseries(df, metadata_columns=['is_weekend'])
@@ -49,6 +58,8 @@ def prepare_data(df, lags):
     df = df.replace(0, np.nan)  # Replace 0s with NaNs
     df.dropna(inplace=True)  # Drop rows with NaNs created by lagging and shifting
     return df
+
+### MAIN ###
 
 def parser_add_arguments(parser):
     parser.add_argument('--use-grid', action='store_true', help='Use grid search for model tuning')
@@ -64,7 +75,7 @@ def main():
 
     # Data Preparation
     logger.info("Preparing data...")
-    train = prepare_data(train, lags=[1,2,3])
+    train = prepare_data(train, lags=LIGHTGBM_LAGS)
     train = get_forecast_target(train, prediction_horizon=1)
     train.dropna(subset=['target'], inplace=True)
 
@@ -82,7 +93,6 @@ def main():
             'n_estimators': [100, 500, 1000],
             'num_leaves': [31, 50, 100],
             'learning_rate': [0.01, 0.05, 0.1],
-            # Add more parameters here if desired
         }
         grid_search = GridSearchCV(
             estimator=lgb.LGBMRegressor(),
@@ -103,6 +113,9 @@ def main():
             model_config = json.load(f)
 
         best_model = lgb.LGBMRegressor(**model_config)
+        
+        # Train model
+        print("Training model...")
         best_model.fit(x_train, y_train)
 
     # Validate model

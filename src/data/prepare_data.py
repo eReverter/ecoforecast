@@ -1,51 +1,76 @@
 """
 Script to prepare data for modelling either for forecasting or classification.
 
-For classification, the label of the next hour maximum surplus region is added. Then, the idea is to predict that label based on the previous hour only.
+For classification, the label of the next hour maximum surplus region is added.
+The idea is then to predict that label based on the previous hour only.
 
 For forecasting, the data is converted to a time series format with the following features:
 - series_id
 - timestamp
 - surplus*
+- Additional metadata (e.g., is_weekend)
 
 *Another option would be to train different models for every region, or two models, one for generated data and another one for loaded data.
 Since there is not much data, I think it is better to train a single model for all regions and both types of data.
 
-In the classification model, only complete data will be used. That is, The 3 months of data where all values of UK are available.
-In the forecasting model, all data from 2022 wil be used.
+Base processed data will always look like:
+timestamp | etype_1_region_1 | ... | etype_2_region_m
 
-Processed data will always look like:
-timestamp | etype_1_region_1 | ... | etype_2_region_m 
+Additional preparation will be required for each model type.
 """
+# General imports
 import argparse
+import os
+
+# General data imports
+import pandas as pd
+
+# Local imports
 from src.definitions import (
     PROCESSED_DATA_DIR, 
     EXTERNAL_DATA_DIR,
     REGION,
     REGION_MAPPING,
-    PREDICTIONS_DIR)
-import pandas as pd
-import os
+    PREDICTIONS_DIR
+)
 
 ### GENERAL FUNCTIONS ###
 
 def load_data():
+    """
+    Load processed train and validation data.
+    """
     train = pd.read_csv(os.path.join(PROCESSED_DATA_DIR, 'train.csv'), parse_dates=['timestamp'])
     test = pd.read_csv(os.path.join(PROCESSED_DATA_DIR, 'validation.csv'), parse_dates=['timestamp'])
     return train, test
 
 def add_is_weekend(df):
+    """
+    Add a boolean feature indicating whether the timestamp is a weekend.
+
+    :param df: DataFrame to add the feature to.
+    :return: DataFrame with the feature added.
+    """
     df['is_weekend'] = df['timestamp'].dt.dayofweek.isin([5, 6])
     return df
 
 def get_surplus(df):
+    """
+    Compute the surplus of each region at every timestamp.
+
+    :param df: DataFrame with the data.
+    :return: DataFrame with the surplus columns added.
+    """
     for region in REGION:
         df[f'{region}_surplus'] = df[f'{region}_gen'] - df[f'{region}_load']
     return df
 
 def get_curr_max(df):
     """
-    Get the current maximum surplus region
+    Get the current maximum surplus region.
+
+    :param df: DataFrame with the data.
+    :return: DataFrame with the current maximum surplus region added.
     """
     max_col = df.filter(regex='surplus').idxmax(axis=1)
     country_code = max_col.str.split('_', expand=True)[0]
@@ -55,7 +80,10 @@ def get_curr_max(df):
 
 def get_cls_target(df):
     """
-    Get the label for the dataframe using the column with the maximum surplus
+    Get the label for the dataframe using the column with the maximum surplus.
+
+    :param df: DataFrame with the data.
+    :return: DataFrame with the target column added.
     """
     # Use the next observation country code as the target
     df['target'] = df['curr_max'].shift(-1)
@@ -63,13 +91,13 @@ def get_cls_target(df):
 
 def get_ohe_from_cat(df, cat='curr_max'):
     """
-    Get one-hot encoding from a categorical column
+    Get one-hot encoding from a categorical column.
+
+    :param df: DataFrame with the data.
+    :param cat: Name of the categorical column.
     """
     df = pd.concat([df, pd.get_dummies(df[cat], prefix=cat)], axis=1)
     return df
-
-def split_load_gen():
-    pass
 
 ### FORECASTING ENERGY FUNCTIONS ###
 
@@ -119,10 +147,25 @@ def get_lags(ts, lags, value_col='surplus', series_id_col='series_id'):
     return ts
 
 def get_forecast_target(ts, prediction_horizon, value_col='surplus', series_id_col='series_id'):
+    """
+    Add the target column (future value) to the time series data.
+
+    :param df: DataFrame with time series data.
+    :param prediction_horizon: Number of hours to predict ahead.
+    :param value_col: Name of the column containing values.
+    :param series_id_col: Name of the column containing series identifiers.
+    :return: DataFrame with target column added.
+    """
     ts['target'] = ts.groupby(series_id_col)[value_col].shift(-prediction_horizon)
     return ts
 
 def add_is_holiday(ts):
+    """
+    Load holiday data and add a boolean feature indicating whether the timestamp is a regional holiday.
+
+    :param ts: DataFrame with time series data.
+    :return: DataFrame with is_holiday column added.
+    """
     # Convert timestamp to date for comparison
     ts['date'] = ts['timestamp'].dt.date
 
@@ -162,12 +205,13 @@ def normalize_values(ts, value_col='value', series_id_col='series_id'):
     ts[value_col] = ts.groupby(series_id_col)[value_col].apply(lambda x: (x - x.min()) / (x.max() - x.min()))
     return ts
 
-### CLASSIFICATION FUNCTIONS ###
+### GROUND TRUTH FOR VALIDATION ###
 
-### MAIN ###
 def prepare_reference_predictions(validation_file):
     """
-    Prepare the reference predictions for the validation set.
+    Store the reference predictions for the validation set.
+
+    :param validation_file: Path to the validation file.
     """
     # Load validation set
     validation = pd.read_csv(validation_file, parse_dates=['timestamp'])
@@ -182,6 +226,8 @@ def prepare_reference_predictions(validation_file):
     # Build predictions.json with the target column
     predictions = validation[['timestamp', 'target']]
     predictions.to_json(os.path.join(PREDICTIONS_DIR, 'predictions.json'), orient='records')
+
+### MAIN ###
 
 def main():
     parser = argparse.ArgumentParser(description='Prepare predictions fo reference')

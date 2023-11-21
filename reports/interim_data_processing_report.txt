@@ -1,0 +1,80 @@
+Interim Data Processing Report
+Generated on: 2023-11-20 20:23:32.166479
+
+File: UK_gen.csv
+	Pre-processing shape: (3234, 3)
+	Post-processing shape: (8137, 2)
+
+File: PO_gen.csv
+	Pre-processing shape: (52560, 3)
+	Post-processing shape: (8760, 2)
+
+File: DE_gen.csv
+	Pre-processing shape: (78849, 3)
+	Post-processing shape: (8761, 2)
+
+File: UK_load.csv
+	Pre-processing shape: (4775, 2)
+	Post-processing shape: (4775, 2)
+
+File: HU_gen.csv
+	Pre-processing shape: (61327, 3)
+	Post-processing shape: (8761, 2)
+
+File: HU_load.csv
+	Pre-processing shape: (8761, 2)
+	Post-processing shape: (8761, 2)
+
+File: SE_gen.csv
+	Pre-processing shape: (27308, 3)
+	Post-processing shape: (8760, 2)
+
+File: DE_load.csv
+	Pre-processing shape: (8761, 2)
+	Post-processing shape: (8761, 2)
+
+File: IT_load.csv
+	Pre-processing shape: (8760, 2)
+	Post-processing shape: (8760, 2)
+
+File: SP_gen.csv
+	Pre-processing shape: (87610, 3)
+	Post-processing shape: (8761, 2)
+
+File: IT_gen.csv
+	Pre-processing shape: (66578, 3)
+	Post-processing shape: (8760, 2)
+
+File: NE_gen.csv
+	Pre-processing shape: (43805, 3)
+	Post-processing shape: (8761, 2)
+
+File: NE_load.csv
+	Pre-processing shape: (8761, 2)
+	Post-processing shape: (8761, 2)
+
+File: DK_load.csv
+	Pre-processing shape: (8760, 2)
+	Post-processing shape: (8760, 2)
+
+File: DK_gen.csv
+	Pre-processing shape: (35038, 3)
+	Post-processing shape: (8760, 2)
+
+File: PO_load.csv
+	Pre-processing shape: (8760, 2)
+	Post-processing shape: (8760, 2)
+
+File: SE_load.csv
+	Pre-processing shape: (8760, 2)
+	Post-processing shape: (8760, 2)
+
+File: SP_load.csv
+	Pre-processing shape: (8761, 2)
+	Post-processing shape: (8761, 2)
+
+Merged DataFrame Statistics:
+	Total rows: 8761
+	Total columns: 19
+
+End of Report
