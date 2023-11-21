@@ -117,9 +117,18 @@ python src/data/holiday_ingestion.py \
 
 Data preprocessing is crucial. My approach includes merging all data into hourly intervals, interpolating zeros, and handling NaNs based on the model requirements.
 
+In processing the data, I employed two distinct aggregation strategies:
+
+1. Direct Hourly Aggregation:
+This method involves directly aggregating the data to the floor hour, regardless of the original recording intervals. It's a straightforward approach where each timestamp is rounded down to the nearest hour. Then, the sum is used for aggregation.
+
+2. Intelligent Interval Population:
+Here, the strategy caters to potentially missing intervals. For instance, if the data is recorded every 15 minutes but an hour only has two records, the missing intervals are filled using the mean of the available data. This approach is more nuanced, aiming to maintain the integrity of the data where recording frequencies vary. The estimated interval frequency is used to populate and aggregate the data effectively. The implementation of this method can be found in the `resample_hourly_accounting_for_missing_intervals` function within `src/data/data_processing.py`.
+
 Key steps:
 - Consider only renewable energy (codes in `src/definitions.py`).
 - Track data changes using `DataProcessingStatistics` and `InterimDataProcessingStatistics` that can be found in `src/metrics.py`. Reports generated are in `reports/`.
+- Aggregate data to hour intervals in a significant way.
 
 A glimpse of data processing tracking:
 
@@ -195,9 +204,11 @@ Two approaches were tested: direct prediction of the region with maximum surplus
 
 ### Model Training
 
-Models are trained using lagged data for boosting methods and sequentially for the LSTM model. A grid search tunes hyperparameters.
+Models are trained using lagged data for boosting methods and sequentially for the LSTM model. A grid search tunes hyperparameters. Additional features, such as weekdays, holidays, and current region of the series are added when data is prepared for trainig.
 
-Naive baseline method: current maximum surplus country is assumed to continue as such.
+Surplus energy is calculated by assessing the difference between the amount of renewable energy generated and the total energy load required. Specifically, this calculation focuses solely on renewable sources, without subtracting the contribution of non-renewable energy sources from the total energy load. This approach is grounded in the vision of achieving a future where energy generation is predominantly renewable (supplemented by nuclear energy in the interim, in my opinion). It aligns with the goal of transitioning towards a more sustainable energy landscape, where renewable sources play a central role in meeting energy demands.
+
+To compare model performance, a naive baseline method is used: current maximum surplus country is assumed to continue as such.
 
 To train the models:
 
