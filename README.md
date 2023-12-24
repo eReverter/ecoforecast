@@ -1,4 +1,6 @@
-# NUWE: EcoForecast
+# NUWE: EcoForecast - 🏆 **5th Place Solo among 236 Teams**
+
+> **Update [December 24, 2023]:** I'm happy to have achieved 5th place, especially considering the time constraints and competing solo. The code in this repository remains as it was for the submission, reflecting the work within the competition's timeframe. The competition rules can be accessed through the link provided in the repository's description.
 
 ![Energy Surplus Prediction](figures/train_DE_energy_evolution.png)
 
