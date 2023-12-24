@@ -276,5 +276,3 @@ This project's exploration into renewable energy surplus prediction across Europ
 - The Naive Baseline model showed unexpectedly high effectiveness, indicating predictable patterns in the energy surplus data.
 - Boosting models excelled in the forecasting approach, highlighting the challenge of direct country prediction.
 - The basic LSTM model, completely underperforming, points to the potential need for a tailor made architecture, more data, and of course, more time invested in optimizing it. The variance in its performance is too high depending on the chosen hyperparametrs.
-
----
